@@ -16,6 +16,12 @@ const report = ref<WeatherReport | null>(null)
 const loading = ref(false)
 const searching = ref(false)
 const error = ref('')
+const upcomingHours = computed(() => {
+  if (!report.value) return []
+  return report.value.hourly
+    .filter((hour) => hour.time >= report.value!.current.time)
+    .slice(0, 24)
+})
 
 const activityNames: Record<string, string> = { walk: 'Walk', run: 'Run', bike: 'Ride a bike' }
 const ratingNames: Record<string, string> = { good: 'Good conditions', caution: 'Use caution', poor: 'Better to wait' }
@@ -55,11 +61,6 @@ function chooseLocation(location: Location) {
   query.value = ''
   locations.value = []
   void loadWeather(location)
-}
-
-function hourLabel(value: string) {
-  // Open-Meteo returns wall-clock times in the requested location timezone.
-  return value.slice(11, 16)
 }
 
 function conditionLabel(code: number) {
@@ -119,10 +120,9 @@ onMounted(() => { void loadWeather(selected.value) })
       <p v-if="error" role="alert" class="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ error }}</p>
 
       <section class="mt-10 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]" aria-live="polite">
-        <article class="relative overflow-hidden rounded-[2rem] bg-[#173e37] p-7 text-white shadow-[0_22px_55px_rgba(23,62,55,0.15)] sm:p-9">
-          <div class="absolute -right-10 -top-16 h-64 w-64 rounded-full border border-white/10" />
-          <div class="absolute -right-1 -top-7 h-44 w-44 rounded-full border border-white/10" />
-          <div class="relative">
+        <article class="relative overflow-hidden rounded-[2rem] p-7 text-white shadow-[0_22px_55px_rgba(23,62,55,0.15)] sm:p-9">
+          <WeatherScene :code="report?.current.weather_code ?? 2" />
+          <div class="relative z-10">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-sm font-medium text-[#b9d2c4]">{{ selected.name }}<span v-if="selected.country">, {{ selected.country }}</span></p>
@@ -163,17 +163,11 @@ onMounted(() => { void loadWeather(selected.value) })
 
       <section class="mb-10 mt-5 rounded-[2rem] border border-[#e1e9e2] bg-white p-7 shadow-[0_10px_36px_rgba(28,65,53,0.04)] sm:p-9">
         <div class="flex flex-wrap items-end justify-between gap-4">
-          <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185]">The outlook</p><h2 class="display mt-2 text-xl font-bold text-[#193f36]">The next few hours</h2></div>
-          <span class="text-xs text-[#82958b]">Temperature · chance of rain</span>
+          <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185]">The outlook</p><h2 class="display mt-2 text-xl font-bold text-[#193f36]">The next 24 hours</h2></div>
+          <span class="text-xs text-[#82958b]">Temperature trend · chance of rain</span>
         </div>
         <div v-if="loading && !report" class="mt-8 text-sm text-[#82958b]">Loading the hourly forecast…</div>
-        <div v-else-if="report" class="mt-7 flex gap-3 overflow-x-auto pb-2">
-          <div v-for="hour in report.hourly.slice(0, 12)" :key="hour.time" class="min-w-[76px] flex-1 rounded-2xl bg-[#f5f8f4] px-3 py-4 text-center">
-            <p class="text-[11px] font-medium text-[#7d9085]">{{ hourLabel(hour.time) }}</p>
-            <p class="display my-3 text-lg font-bold text-[#254a3f]">{{ Math.round(hour.temperature_c) }}°</p>
-            <p class="text-[11px] text-[#6793a0]">{{ hour.precipitation_probability_pct }}% rain</p>
-          </div>
-        </div>
+        <HourlyForecastChart v-else-if="report" :hours="upcomingHours" :timezone="report.timezone" />
       </section>
 
       <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-[#dfe8e0] py-5 text-xs text-[#85958c]">

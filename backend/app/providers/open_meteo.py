@@ -49,7 +49,7 @@ class OpenMeteoClient:
             "longitude": longitude,
             "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
             "hourly": "temperature_2m,precipitation_probability,wind_speed_10m",
-            "forecast_days": 1,
+            "forecast_days": 2,
             "timezone": "auto",
             "wind_speed_unit": "kmh",
         }

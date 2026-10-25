@@ -3,9 +3,10 @@
 ## MVP: a useful forecast, not a weather clone
 
 1. Search for a city and load its current and hourly conditions.
-2. Show clear loading, empty, and error states.
-3. Explain outdoor activity suggestions with the forecast factors that affected them.
-4. Add a responsive, accessible dashboard and document the data source and its limits.
+2. Show a readable 24-hour temperature and rain chart, plus a condition-specific visual scene.
+3. Show clear loading, empty, and error states.
+4. Explain outdoor activity suggestions with the forecast factors that affected them.
+5. Keep the dashboard responsive, accessible, and clear about its data source and limits.
 
 ## Next milestones
 
