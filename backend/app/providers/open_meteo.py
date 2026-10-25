@@ -7,7 +7,13 @@ import httpx
 
 from app.providers.errors import ProviderError
 from app.schemas.location import Location
-from app.schemas.weather import CurrentConditions, DailyForecast, HourlyPoint, WeatherReport
+from app.schemas.weather import (
+    CurrentConditions,
+    DailyForecast,
+    HourlyPoint,
+    WeatherMapPoint,
+    WeatherReport,
+)
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -122,6 +128,56 @@ class OpenMeteoClient:
                     hourly=hourly_points,
                     daily=daily_points,
                 )
+        except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as exc:
+            raise ProviderError from exc
+
+    async def get_map_points(self, coordinates: list[tuple[float, float]]) -> list[WeatherMapPoint]:
+        """Fetch a small multi-location snapshot in one Open-Meteo request."""
+        params = {
+            "latitude": ",".join(f"{latitude:.5f}" for latitude, _ in coordinates),
+            "longitude": ",".join(f"{longitude:.5f}" for _, longitude in coordinates),
+            "current": "temperature_2m,precipitation,weather_code,wind_speed_10m",
+            "hourly": "precipitation_probability",
+            "forecast_days": 1,
+            "timezone": "auto",
+            "wind_speed_unit": "kmh",
+        }
+        try:
+            async with self._client_scope() as client:
+                response = await client.get(FORECAST_URL, params=params)
+                response.raise_for_status()
+                payload = response.json()
+                locations = payload if isinstance(payload, list) else [payload]
+                if len(locations) != len(coordinates):
+                    raise ValueError("Provider returned an unexpected number of map points")
+
+                points = []
+                for location in locations:
+                    current = location["current"]
+                    hourly = location["hourly"]
+                    current_time = datetime.fromisoformat(current["time"])
+                    closest_hour = min(
+                        range(len(hourly["time"])),
+                        key=lambda index: abs(
+                            (
+                                datetime.fromisoformat(hourly["time"][index]) - current_time
+                            ).total_seconds()
+                        ),
+                    )
+                    points.append(
+                        WeatherMapPoint(
+                            latitude=location["latitude"],
+                            longitude=location["longitude"],
+                            time=current_time,
+                            temperature_c=current["temperature_2m"],
+                            precipitation_probability_pct=hourly["precipitation_probability"][
+                                closest_hour
+                            ],
+                            wind_speed_kmh=current["wind_speed_10m"],
+                            weather_code=current["weather_code"],
+                        )
+                    )
+                return points
         except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError from exc
 

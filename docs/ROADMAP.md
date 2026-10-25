@@ -14,8 +14,9 @@
 
 ### Map and spatial context
 
-- Add nearby comparison points and optional weather overlays.
-- Compare a few nearby points and show when/where each forecast was fetched.
+- **Implemented:** compare nine forecast points in the visible map area with temperature, rain-probability, and wind layers. Choosing a point loads the full hourly and daily forecast.
+- **Implemented:** batch all nine coordinate pairs into one forecast-provider request after map movement settles; cancel stale requests in the browser and reject oversized map bounds in the API.
+- **Next:** show a visible data timestamp and consider a weather-tile provider if usage grows beyond a small portfolio demo.
 - Respect OpenStreetMap tile attribution and usage policy; avoid treating the standard tile service as a free bulk tile CDN.
 
 ### Personalization and data quality
@@ -25,9 +26,10 @@
 
 ### Portfolio polish
 
-- Expand browser-level coverage and add provider freshness/availability monitoring.
+- Add repeatable browser-level checks for city search, geolocation permission states, map layer selection, and narrow viewports.
+- Add provider freshness/availability monitoring.
 - Publish the Coolify deployment and verify ARM64 images on the CAX21.
-- Publish architecture notes and a short case study explaining what was learned.
+- Add release screenshots and publish a short case study explaining what was learned.
 
 ## Product boundaries
 

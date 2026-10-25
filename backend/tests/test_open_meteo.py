@@ -97,6 +97,49 @@ def test_city_search_maps_geocoding_results() -> None:
     assert requests[0].url.params["language"] == "es"
 
 
+def test_map_points_batch_locations_and_choose_nearest_precipitation_hour() -> None:
+    requested: list[httpx.Request] = []
+
+    def point_payload(latitude: float, longitude: float, temperature: int) -> dict[str, object]:
+        return {
+            "latitude": latitude,
+            "longitude": longitude,
+            "current": {
+                "time": "2026-10-25T12:00",
+                "temperature_2m": temperature,
+                "precipitation": 0.1,
+                "weather_code": 2,
+                "wind_speed_10m": 9,
+            },
+            "hourly": {
+                "time": ["2026-10-25T11:00", "2026-10-25T12:00", "2026-10-25T13:00"],
+                "precipitation_probability": [10, 35, 70],
+            },
+        }
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requested.append(request)
+        return httpx.Response(
+            200,
+            json=[point_payload(4.8, -75.7, 22), point_payload(4.9, -75.6, 24)],
+        )
+
+    async def scenario() -> list[object]:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+            return await OpenMeteoClient(client).get_map_points([(4.8, -75.7), (4.9, -75.6)])
+
+    points = asyncio.run(scenario())
+
+    assert len(requested) == 1
+    assert requested[0].url.params["latitude"] == "4.80000,4.90000"
+    assert requested[0].url.params["current"] == (
+        "temperature_2m,precipitation,weather_code,wind_speed_10m"
+    )
+    assert points[0].temperature_c == 22
+    assert points[0].precipitation_probability_pct == 35
+    assert points[1].longitude == -75.6
+
+
 def test_city_search_provider_failure_is_wrapped() -> None:
     async def scenario() -> None:
         def respond(_: httpx.Request) -> httpx.Response:

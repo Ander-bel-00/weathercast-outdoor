@@ -15,6 +15,16 @@ export interface HourlyPoint {
   wind_speed_kmh: number
 }
 
+export interface WeatherMapPoint {
+  latitude: number
+  longitude: number
+  time: string
+  temperature_c: number
+  precipitation_probability_pct: number
+  wind_speed_kmh: number
+  weather_code: number
+}
+
 export interface WeatherReport {
   location_name: string
   latitude: number

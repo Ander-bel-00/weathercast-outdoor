@@ -9,6 +9,7 @@ from app.schemas.weather import (
     CurrentConditions,
     DailyForecast,
     HourlyPoint,
+    WeatherMapPoint,
     WeatherReport,
 )
 
@@ -57,6 +58,15 @@ def post_weather(payload: dict[str, object]) -> httpx.Response:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             return await client.post("/api/v1/weather", json=payload)
+
+    return asyncio.run(scenario())
+
+
+def get_map_grid(params: dict[str, object]) -> httpx.Response:
+    async def scenario() -> httpx.Response:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.get("/api/v1/weather/map-grid", params=params)
 
     return asyncio.run(scenario())
 
@@ -139,3 +149,42 @@ def test_weather_route_rejects_invalid_coordinates_and_unknown_fields() -> None:
 
     assert invalid_location.status_code == 422
     assert obsolete_preferences.status_code == 422
+
+
+def test_weather_map_grid_returns_bounded_batch_of_points() -> None:
+    class MapWeatherClient(FakeWeatherClient):
+        coordinates: list[tuple[float, float]] = []
+
+        async def get_map_points(
+            self, coordinates: list[tuple[float, float]]
+        ) -> list[WeatherMapPoint]:
+            self.coordinates = coordinates
+            return [
+                WeatherMapPoint(
+                    latitude=latitude,
+                    longitude=longitude,
+                    time=datetime(2026, 10, 25, 12),
+                    temperature_c=22,
+                    precipitation_probability_pct=35,
+                    wind_speed_kmh=9,
+                    weather_code=2,
+                )
+                for latitude, longitude in coordinates
+            ]
+
+    app.dependency_overrides[get_weather_client] = MapWeatherClient
+    try:
+        response = get_map_grid({"north": 5, "east": -75, "south": 4, "west": -76})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert len(response.json()) == 9
+
+
+def test_weather_map_grid_rejects_invalid_or_oversized_bounds() -> None:
+    inverted_bounds = get_map_grid({"north": 4, "east": -75, "south": 5, "west": -76})
+    oversized_bounds = get_map_grid({"north": 50, "east": 40, "south": 0, "west": 0})
+
+    assert inverted_bounds.status_code == 422
+    assert oversized_bounds.status_code == 422

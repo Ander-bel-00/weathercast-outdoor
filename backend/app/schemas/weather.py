@@ -31,6 +31,16 @@ class DailyForecast(BaseModel):
     wind_speed_max_kmh: float
 
 
+class WeatherMapPoint(BaseModel):
+    latitude: float
+    longitude: float
+    time: datetime
+    temperature_c: float
+    precipitation_probability_pct: int
+    wind_speed_kmh: float
+    weather_code: int
+
+
 class ActivityRecommendation(BaseModel):
     activity: Literal["walk", "run", "bike"]
     rating: Literal["good", "caution", "poor"]
