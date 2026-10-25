@@ -14,6 +14,8 @@ const activeTheme = computed<'light' | 'dark'>(() => themePreference.value === '
 const copy = computed(() => messages[language.value])
 const query = ref('')
 const locations = ref<Location[]>([])
+const activeLocationIndex = ref(-1)
+const suggestionState = ref<'idle' | 'loading' | 'ready' | 'empty' | 'error'>('idle')
 const DEFAULT_LOCATION: Location = {
   id: 0,
   name: 'Dosquebradas',
@@ -47,6 +49,9 @@ const selectedDayTitle = computed(() => {
 
 const ratingIcons: Record<string, string> = { good: '↗', caution: '◷', poor: '↘' }
 let weatherRequestId = 0
+let locationRequestId = 0
+let locationSearchTimer: ReturnType<typeof setTimeout> | undefined
+let locationSearchController: AbortController | undefined
 
 async function loadWeather(location: Location) {
   const requestId = ++weatherRequestId
@@ -93,26 +98,86 @@ function closeMap() {
   showMap.value = false
 }
 
-async function searchLocations() {
-  const term = query.value.trim()
-  if (term.length < 2) return
+async function fetchLocations(term: string) {
+  const requestId = ++locationRequestId
+  locationSearchController?.abort()
+  const controller = new AbortController()
+  locationSearchController = controller
   searching.value = true
-  error.value = ''
+  suggestionState.value = 'loading'
+  activeLocationIndex.value = -1
   try {
-    locations.value = await $fetch<Location[]>(`${config.public.apiBase}/locations/search`, {
+    const results = await $fetch<Location[]>(`${config.public.apiBase}/locations/search`, {
       query: { q: term, language: language.value },
+      signal: controller.signal,
     })
-    if (!locations.value.length) error.value = copy.value.noCities
+    if (requestId !== locationRequestId) return
+    locations.value = results
+    suggestionState.value = results.length ? 'ready' : 'empty'
   } catch {
-    error.value = copy.value.searchError
+    if (requestId !== locationRequestId || controller.signal.aborted) return
+    locations.value = []
+    suggestionState.value = 'error'
   } finally {
-    searching.value = false
+    if (requestId === locationRequestId) searching.value = false
   }
 }
 
+function searchLocations() {
+  const term = query.value.trim()
+  if (term.length < 3) return
+  if (locationSearchTimer) clearTimeout(locationSearchTimer)
+  void fetchLocations(term)
+}
+
+watch([query, language], ([value]) => {
+  if (locationSearchTimer) clearTimeout(locationSearchTimer)
+  locationSearchController?.abort()
+  locationRequestId += 1
+  searching.value = false
+  activeLocationIndex.value = -1
+  const term = value.trim()
+  if (term.length < 3) {
+    locations.value = []
+    suggestionState.value = 'idle'
+    return
+  }
+  locations.value = []
+  suggestionState.value = 'idle'
+  locationSearchTimer = setTimeout(() => void fetchLocations(term), 350)
+})
+
+function moveLocationSelection(direction: 1 | -1) {
+  if (!locations.value.length) return
+  const nextIndex = activeLocationIndex.value + direction
+  activeLocationIndex.value = (nextIndex + locations.value.length) % locations.value.length
+}
+
+function closeLocationSuggestions() {
+  if (locationSearchTimer) clearTimeout(locationSearchTimer)
+  locationSearchController?.abort()
+  locationRequestId += 1
+  searching.value = false
+  locations.value = []
+  suggestionState.value = 'idle'
+  activeLocationIndex.value = -1
+}
+
+function handleSearchEnter() {
+  if (activeLocationIndex.value >= 0 && locations.value[activeLocationIndex.value]) {
+    chooseLocation(locations.value[activeLocationIndex.value])
+    return
+  }
+  searchLocations()
+}
+
 function chooseLocation(location: Location) {
+  if (locationSearchTimer) clearTimeout(locationSearchTimer)
+  locationSearchController?.abort()
+  locationRequestId += 1
   query.value = ''
   locations.value = []
+  suggestionState.value = 'idle'
   locationNoticeKey.value = null
   isCurrentLocation.value = false
   void loadWeather(location)
@@ -164,6 +229,9 @@ async function locateUser() {
     const position = await getBrowserPosition()
     const latitude = position.coords.latitude
     const longitude = position.coords.longitude
+    // The browser has provided coordinates; reverse geocoding may take longer.
+    locating.value = false
+    locationNoticeKey.value = 'locationDetected'
     const nearby: Location = {
       id: 0,
       name: copy.value.nearYou,
@@ -255,6 +323,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (locationSearchTimer) clearTimeout(locationSearchTimer)
+  locationSearchController?.abort()
   if (systemThemeChangeHandler) colorSchemeQuery?.removeEventListener('change', systemThemeChangeHandler)
 })
 </script>
@@ -292,18 +362,21 @@ onUnmounted(() => {
           </h1>
           <p class="mt-4 max-w-xl text-base leading-7 text-[#62736c] dark:text-slate-300">{{ copy.heroDescription }}</p>
         </div>
-        <form class="relative" @submit.prevent="searchLocations">
+        <form class="relative" @submit.prevent="handleSearchEnter">
           <label for="city-search" class="mb-2 block text-xs font-bold uppercase tracking-wider text-[#55716a] dark:text-slate-300">{{ copy.findCity }}</label>
           <div class="flex rounded-2xl border border-[#dce7df] bg-white p-1.5 shadow-[0_10px_36px_rgba(28,65,53,0.06)] dark:border-slate-700 dark:bg-slate-900">
-            <input id="city-search" v-model="query" class="min-w-0 flex-1 rounded-xl bg-transparent px-4 py-3 text-sm text-[#173e37] outline-none placeholder:text-[#97a9a0] dark:text-white dark:placeholder:text-slate-400" :placeholder="copy.searchPlaceholder" autocomplete="off">
-            <button class="rounded-xl bg-[#173e37] px-5 text-sm font-semibold text-white transition hover:bg-[#27584c] disabled:opacity-60 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400" :disabled="searching || query.trim().length < 2">
+            <input id="city-search" v-model="query" role="combobox" aria-autocomplete="list" :aria-expanded="locations.length > 0 || suggestionState === 'empty' || suggestionState === 'loading' || suggestionState === 'error'" aria-controls="city-search-results" :aria-activedescendant="activeLocationIndex >= 0 ? `city-result-${activeLocationIndex}` : undefined" class="min-w-0 flex-1 rounded-xl bg-transparent px-4 py-3 text-sm text-[#173e37] outline-none placeholder:text-[#97a9a0] dark:text-white dark:placeholder:text-slate-400" :placeholder="copy.searchPlaceholder" autocomplete="off" @keydown.down.prevent="moveLocationSelection(1)" @keydown.up.prevent="moveLocationSelection(-1)" @keydown.enter.prevent="handleSearchEnter" @keydown.esc.prevent="closeLocationSuggestions">
+            <button type="submit" class="rounded-xl bg-[#173e37] px-5 text-sm font-semibold text-white transition hover:bg-[#27584c] disabled:opacity-60 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400" :disabled="searching || query.trim().length < 3">
               {{ searching ? copy.searching : copy.search }}
             </button>
           </div>
           <button type="button" class="mt-3 inline-flex items-center gap-2 rounded-xl px-2 py-2 text-xs font-semibold text-[#55796b] transition hover:bg-[#eaf2ec] dark:text-sky-300 dark:hover:bg-slate-800" @click="openMap"><span aria-hidden="true">◎</span>{{ copy.openMap }}</button>
-          <ul v-if="locations.length" class="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-[#dce7df] bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800" :aria-label="copy.citySearchResults">
-            <li v-for="location in locations" :key="location.id">
-              <button type="button" class="w-full rounded-xl px-3 py-3 text-left text-sm text-[#24473e] hover:bg-[#f1f6f1] dark:text-slate-100 dark:hover:bg-slate-700" @click="chooseLocation(location)">
+          <ul v-if="locations.length || suggestionState === 'loading' || suggestionState === 'empty' || suggestionState === 'error'" id="city-search-results" class="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-[#dce7df] bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800" role="listbox" :aria-label="copy.citySearchResults" aria-live="polite">
+            <li v-if="suggestionState === 'loading'" class="px-3 py-3 text-sm text-[#74867c] dark:text-slate-300" role="status">{{ copy.searching }}</li>
+            <li v-else-if="suggestionState === 'empty'" class="px-3 py-3 text-sm text-[#74867c] dark:text-slate-300" role="status">{{ copy.noCities }}</li>
+            <li v-else-if="suggestionState === 'error'" class="px-3 py-3 text-sm text-[#74867c] dark:text-slate-300" role="status">{{ copy.searchError }}</li>
+            <li v-for="(location, index) in locations" :key="location.id">
+              <button :id="`city-result-${index}`" type="button" role="option" :aria-selected="activeLocationIndex === index" class="w-full rounded-xl px-3 py-3 text-left text-sm text-[#24473e] hover:bg-[#f1f6f1] dark:text-slate-100 dark:hover:bg-slate-700" :class="activeLocationIndex === index ? 'bg-[#f1f6f1] dark:bg-slate-700' : ''" @mouseenter="activeLocationIndex = index" @click="chooseLocation(location)">
                 <span class="font-semibold">{{ location.name }}</span><span class="text-[#7a8d84] dark:text-slate-400"> · {{ [location.admin1, location.country].filter(Boolean).join(', ') }}</span>
               </button>
             </li>
@@ -377,7 +450,7 @@ onUnmounted(() => {
         <HourlyForecastChart v-else-if="report" :hours="selectedDayHours" :timezone="report.timezone" :language="language" />
       </section>
 
-      <dialog ref="mapDialog" class="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto rounded-[2rem] border border-[#dce7df] bg-white p-0 text-[#16322e] shadow-2xl backdrop:bg-slate-950/70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @close="showMap = false" @click.self="closeMap">
+      <dialog ref="mapDialog" class="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto rounded-[2rem] border border-[#dce7df] bg-white p-0 text-[#16322e] shadow-2xl backdrop:bg-slate-950/70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @close="showMap = false">
         <div class="p-5 sm:p-7">
           <div class="flex items-start justify-between gap-4">
             <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.outlookEyebrow }}</p><h2 id="map-dialog-title" class="display mt-2 text-xl font-bold">{{ copy.mapTitle }}</h2><p class="mt-2 text-sm text-[#74867c] dark:text-slate-300">{{ copy.mapDescription }}</p></div>
