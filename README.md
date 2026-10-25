@@ -8,7 +8,7 @@ WeatherCast is an open-source weather context dashboard that helps people decide
 
 - Search for a city and inspect current conditions plus the next 24 hours.
 - Read the hourly temperature and rain trend in a chart, with a weather scene that adapts to current conditions.
-- Follow a subtle local-time atmosphere: a soft morning or afternoon sky, a restrained evening tint, and stars at night. The forecast scene remains tied to actual weather conditions.
+- Use a restrained animated backdrop that adapts to the selected light or dark theme, while the forecast scene stays tied to actual weather conditions.
 - See why a walk, run, or bike ride is recommended or discouraged.
 - Get nearby weather automatically after granting browser location permission; preferences for language and theme stay in the browser.
 - Explore conditions on an interactive map and compare nearby places (next milestones).

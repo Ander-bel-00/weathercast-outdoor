@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Location, WeatherReport } from '~/types/weather'
 import { messages, type Language } from '~/utils/messages'
 
@@ -10,7 +10,6 @@ const prefersDark = ref(false)
 const activeTheme = computed<'light' | 'dark'>(() => themePreference.value === 'system'
   ? (prefersDark.value ? 'dark' : 'light')
   : themePreference.value)
-const clockNow = ref(Date.now())
 const copy = computed(() => messages[language.value])
 const query = ref('')
 const locations = ref<Location[]>([])
@@ -24,18 +23,6 @@ const DEFAULT_LOCATION: Location = {
 }
 const selected = ref<Location>({ ...DEFAULT_LOCATION })
 const report = ref<WeatherReport | null>(null)
-const timeOfDay = computed(() => {
-  const timezone = report.value?.timezone || selected.value.timezone || 'UTC'
-  const localHour = Number(new Intl.DateTimeFormat('en-GB', {
-    timeZone: timezone,
-    hour: '2-digit',
-    hourCycle: 'h23',
-  }).format(new Date(clockNow.value)))
-  if (localHour < 5 || localHour >= 20) return 'night'
-  if (localHour < 11) return 'morning'
-  if (localHour < 17) return 'afternoon'
-  return 'evening'
-})
 const loading = ref(false)
 const searching = ref(false)
 const locating = ref(false)
@@ -51,13 +38,15 @@ const upcomingHours = computed(() => {
 })
 
 const ratingIcons: Record<string, string> = { good: '↗', caution: '◷', poor: '↘' }
+let weatherRequestId = 0
 
 async function loadWeather(location: Location) {
+  const requestId = ++weatherRequestId
   selected.value = location
   loading.value = true
   error.value = ''
   try {
-    report.value = await $fetch<WeatherReport>(`${config.public.apiBase}/weather`, {
+    const nextReport = await $fetch<WeatherReport>(`${config.public.apiBase}/weather`, {
       method: 'POST',
       body: {
         latitude: location.latitude,
@@ -66,10 +55,11 @@ async function loadWeather(location: Location) {
         language: language.value,
       },
     })
+    if (requestId === weatherRequestId) report.value = nextReport
   } catch {
-    error.value = copy.value.loadError
+    if (requestId === weatherRequestId) error.value = copy.value.loadError
   } finally {
-    loading.value = false
+    if (requestId === weatherRequestId) loading.value = false
   }
 }
 
@@ -102,8 +92,8 @@ function getBrowserPosition() {
   return new Promise<GeolocationPosition>((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(resolve, reject, {
       enableHighAccuracy: false,
-      maximumAge: 15 * 60 * 1000,
-      timeout: 10_000,
+      maximumAge: 5 * 60 * 1000,
+      timeout: 7_000,
     })
   })
 }
@@ -115,8 +105,10 @@ async function locateUser() {
   if (!navigator.geolocation) {
     isCurrentLocation.value = false
     locationNoticeKey.value = 'locationUnavailable'
+    const wasAlreadyShowingDefault = selected.value.latitude === DEFAULT_LOCATION.latitude
+      && selected.value.longitude === DEFAULT_LOCATION.longitude
     selected.value = { ...DEFAULT_LOCATION }
-    await loadWeather(selected.value)
+    if (!wasAlreadyShowingDefault || (!report.value && !loading.value)) await loadWeather(selected.value)
     locating.value = false
     return
   }
@@ -151,8 +143,10 @@ async function locateUser() {
     isCurrentLocation.value = false
     const denied = typeof reason === 'object' && reason !== null && 'code' in reason && reason.code === 1
     locationNoticeKey.value = denied ? 'locationDenied' : 'locationUnavailable'
+    const wasAlreadyShowingDefault = selected.value.latitude === DEFAULT_LOCATION.latitude
+      && selected.value.longitude === DEFAULT_LOCATION.longitude
     selected.value = { ...DEFAULT_LOCATION }
-    await loadWeather(selected.value)
+    if (!wasAlreadyShowingDefault || (!report.value && !loading.value)) await loadWeather(selected.value)
   } finally {
     locating.value = false
   }
@@ -178,6 +172,8 @@ function syncTheme() {
   if (typeof document !== 'undefined') document.documentElement.dataset.theme = activeTheme.value
 }
 
+watch(activeTheme, syncTheme, { immediate: true })
+
 function conditionLabel(code: number) {
   const conditions = copy.value.conditions
   if (code === 0) return conditions.clear
@@ -191,7 +187,6 @@ function conditionLabel(code: number) {
   return conditions.variable
 }
 
-let clockInterval: ReturnType<typeof setInterval> | undefined
 let colorSchemeQuery: MediaQueryList | undefined
 let systemThemeChangeHandler: (() => void) | undefined
 
@@ -204,22 +199,21 @@ onMounted(() => {
     syncTheme()
   }
   systemThemeChangeHandler = updateSystemTheme
-  clockInterval = setInterval(() => { clockNow.value = Date.now() }, 60_000)
   if (savedLanguage === 'en' || savedLanguage === 'es') language.value = savedLanguage
   if (savedTheme === 'system' || savedTheme === 'light' || savedTheme === 'dark') themePreference.value = savedTheme
   colorSchemeQuery.addEventListener('change', updateSystemTheme)
   updateSystemTheme()
+  void loadWeather(selected.value)
   void locateUser()
 })
 
 onUnmounted(() => {
-  if (clockInterval) clearInterval(clockInterval)
   if (systemThemeChangeHandler) colorSchemeQuery?.removeEventListener('change', systemThemeChangeHandler)
 })
 </script>
 
 <template>
-  <main class="weather-page min-h-screen bg-[#f4f7f3] px-4 py-6 text-[#16322e] dark:bg-[#0b1220] dark:text-slate-100" :data-theme="activeTheme" :data-time-of-day="timeOfDay">
+  <main class="weather-page min-h-screen bg-[#f4f7f3] px-4 py-6 text-[#16322e] dark:bg-[#0b1220] dark:text-slate-100" :data-theme="activeTheme">
     <div class="relative z-10 mx-auto max-w-6xl">
       <header class="flex flex-wrap items-center justify-between gap-4">
         <a href="#home" class="flex items-center gap-3 no-underline" :aria-label="copy.brandHome">
