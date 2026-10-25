@@ -24,6 +24,8 @@ async def search_locations(
 @router.post("/reverse", response_model=Location)
 async def reverse_location(request: ReverseLocationRequest) -> Location:
     try:
-        return await NominatimClient().reverse(request.latitude, request.longitude, request.language)
+        return await NominatimClient().reverse(
+            request.latitude, request.longitude, request.language
+        )
     except ProviderError as exc:
         raise HTTPException(status_code=502, detail="Nearby place lookup is unavailable") from exc
