@@ -6,22 +6,21 @@ WeatherCast is an open-source weather context dashboard that helps people decide
 
 ## Product direction
 
-- Search for a city and inspect current conditions plus the next 24 hours.
+- Search for a city and inspect current conditions, a seven-day outlook, and an hourly forecast for the selected day.
 - Read the hourly temperature and rain trend in a chart, with a weather scene that adapts to current conditions.
 - Use a restrained animated backdrop that adapts to the selected light or dark theme, while the forecast scene stays tied to actual weather conditions.
-- See why a walk, run, or bike ride is recommended or discouraged.
+- See whether a walk, run, or bike ride is a good idea, with specific reasons from the weather now and the next three hours.
 - Get nearby weather automatically after granting browser location permission; preferences for language and theme stay in the browser.
-- Explore conditions on an interactive map and compare nearby places (next milestones).
-- Configure personal thresholds and alerts after the core experience is reliable.
+- Select a point on the interactive map to load its local forecast.
 
-The differentiator is **decision context with visible reasoning**: each recommendation should show the conditions behind it and let people adjust thresholds. The first release uses deterministic rules; it does not claim to use AI.
+The differentiator is **decision context with visible reasoning**: each recommendation calls out forecast rain probability and time, wind, or feels-like temperature behind the advice. The rules are deterministic and deliberately transparent; the app does not claim to use AI.
 
 ## Stack
 
 - **API:** Python, FastAPI, Pydantic, HTTPX; Open-Meteo forecast and geocoding APIs.
 - **Web:** Vue 3 with Nuxt 3, TypeScript, Tailwind CSS.
-- **Map:** Leaflet with OpenStreetMap tiles (planned for the map milestone).
-- **Deployment direction:** Docker Compose managed by Coolify on the Hetzner CAX21 VPS. Build and deploy ARM64-compatible images; Coolify will provide the public routing and HTTPS configuration.
+- **Map:** Leaflet with attributed OpenStreetMap tiles.
+- **Deployment:** Docker Compose managed by Coolify on the Hetzner CAX21 VPS. The Dockerfiles use ARM64-compatible base images; Coolify provides public routing and HTTPS.
 
 We are starting as a modular monolith. That keeps the first deployment and learning loop simple while preserving boundaries between HTTP routes, provider integration, domain rules, and the UI.
 
@@ -47,9 +46,36 @@ npm run dev
 
 The API is at `http://localhost:8000`; interactive API documentation is at `/docs`. The web app is at `http://localhost:3000`. The frontend accepts `NUXT_PUBLIC_API_BASE` if the API runs elsewhere.
 
-Open-Meteo forecast data is shown with attribution and GeoNames is credited for geocoding. The free Open-Meteo API is limited to non-commercial use; review its current terms before using this project commercially or scaling traffic.
+## Run with Docker Compose
 
-Current coordinates are sent to Open-Meteo for a forecast and to OpenStreetMap Nominatim to identify a nearby place. The app asks the browser for permission, shows a fallback city if access is denied, caches reverse lookups, and credits OpenStreetMap. See [the location and preferences decision](docs/decisions/0002-location-and-preferences.md).
+```sh
+cp .env.example .env
+docker compose -f compose.yaml -f compose.local.yaml up --build
+```
+
+This binds the local web and API ports to loopback. Open `http://localhost:3000`; the API docs are at `http://localhost:8000/docs`. For Coolify setup, environment variables, domains, health checks, and operational notes, see [the Coolify deployment guide](docs/deployment-coolify.md).
+
+## Quality checks
+
+```sh
+cd backend
+python -m pip install -e '.[dev]'
+ruff check app tests
+ruff format --check app tests
+pytest --cov=app --cov-report=term-missing --cov-fail-under=80
+
+cd ../frontend
+npm ci
+npm run typecheck
+npm test
+npm run build
+```
+
+GitHub Actions runs these API checks and the frontend type check and production build on pushes to `main` and pull requests targeting `main`.
+
+Open-Meteo supplies the weather forecast and city search; OpenStreetMap Nominatim resolves nearby place names. The free Open-Meteo API is limited to non-commercial use; review its current terms before using this project commercially or scaling traffic.
+
+Current coordinates or a point selected on the map are sent to Open-Meteo for a forecast. The app asks the browser for permission and shows a fallback city if access is denied. Map tiles come from the standard OpenStreetMap tile service and include visible attribution; keep usage appropriate for a small demo and follow its tile policy. See [the location and preferences decision](docs/decisions/0002-location-and-preferences.md).
 
 ## Repository map
 
