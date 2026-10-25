@@ -5,7 +5,7 @@
 1. Search for a city and load its current and hourly conditions.
 2. Show a readable 24-hour temperature and rain chart, plus a condition-specific visual scene.
 3. Detect the visitor's location after browser permission, with a useful fallback when permission is denied.
-4. Let visitors choose English or Spanish and light or dark appearance.
+4. Let visitors choose English or Spanish and system, light, or dark appearance.
 5. Show clear loading, empty, and error states.
 6. Explain outdoor activity suggestions with the forecast factors that affected them.
 7. Keep the dashboard responsive, accessible, and clear about its data source and limits.
