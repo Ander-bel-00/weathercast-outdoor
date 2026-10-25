@@ -10,8 +10,8 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'WeatherCast — clima con contexto',
-      meta: [{ name: 'description', content: 'Decide mejor qué hacer al aire libre con el clima de las próximas horas.' }],
+      title: 'WeatherCast — weather with context',
+      meta: [{ name: 'description', content: 'Make better outdoor plans with weather context for the hours ahead.' }],
     },
   },
 })

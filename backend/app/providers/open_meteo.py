@@ -22,7 +22,7 @@ class OpenMeteoClient:
         self._client = client
 
     async def search_locations(self, query: str) -> list[Location]:
-        params = {"name": query, "count": 8, "language": "es", "format": "json"}
+        params = {"name": query, "count": 8, "language": "en", "format": "json"}
         try:
             async with self._client_scope() as client:
                 response = await client.get(GEOCODING_URL, params=params)
