@@ -1,32 +1,49 @@
 # WeatherCast
 
-WeatherCast is an open-source weather context dashboard that helps people decide what to do outdoors. It combines a forecast with small, explainable activity recommendations instead of presenting weather data without context.
+**Weather, in context.** WeatherCast turns a forecast into a clearer outdoor plan: see the conditions, understand why an activity is recommended, and explore how weather changes across a nearby area.
 
-> **Early project:** this repository is the start of the MVP. Recommendations are informational heuristics, not professional weather, medical, or aviation advice.
+> WeatherCast is an independent portfolio project. Its recommendations are general planning guidance, not official alerts or professional weather, medical, or aviation advice.
 
-## Product direction
+## What makes it different
 
-- Search for a city and inspect current conditions, a seven-day outlook, and an hourly forecast for the selected day.
-- Read the hourly temperature and rain trend in a chart, with a weather scene that adapts to current conditions.
-- Use a restrained animated backdrop that adapts to the selected light or dark theme, while the forecast scene stays tied to actual weather conditions.
-- See whether a walk, run, or bike ride is a good idea, with specific reasons from the weather now and the next three hours.
-- Get nearby weather automatically after granting browser location permission; preferences for language and theme stay in the browser.
-- Select a point on the interactive map to load its local forecast.
+- **Advice with reasons:** walk, run, and cycling guidance explains which rain, wind, or feels-like conditions affected the recommendation and when they are expected.
+- **A forecast you can explore:** current conditions, an interactive hourly chart, and a selectable seven-day outlook.
+- **Nearby weather layers:** compare temperature, rain probability, and wind at nine points across the visible map. Select a point to open its complete forecast.
+- **Low-friction location search:** city suggestions appear as you type; browser location is optional and the default city remains useful if permission is declined.
+- **Comfortable in either language or theme:** English and Spanish, with system, light, and dark appearance preferences.
 
-The differentiator is **decision context with visible reasoning**: each recommendation calls out forecast rain probability and time, wind, or feels-like temperature behind the advice. The rules are deterministic and deliberately transparent; the app does not claim to use AI.
+The advice uses documented, deterministic rules. There is no AI label or hidden recommendation model.
 
-## Stack
+## Screenshots
 
-- **API:** Python, FastAPI, Pydantic, HTTPX; Open-Meteo forecast and geocoding APIs.
-- **Web:** Vue 3 with Nuxt 3, TypeScript, Tailwind CSS.
-- **Map:** Leaflet with attributed OpenStreetMap tiles.
-- **Deployment:** Docker Compose managed by Coolify on the Hetzner CAX21 VPS. The Dockerfiles use ARM64-compatible base images; Coolify provides public routing and HTTPS.
+Screenshots will be added after the first public release.
 
-We are starting as a modular monolith. That keeps the first deployment and learning loop simple while preserving boundaries between HTTP routes, provider integration, domain rules, and the UI.
+## Technology
+
+| Area | Tools |
+| --- | --- |
+| API and weather rules | Python 3.12, FastAPI, Pydantic, HTTPX |
+| Web app | Vue 3, Nuxt 3, TypeScript, Tailwind CSS |
+| Charts and map | Custom accessible SVG chart, Leaflet, OpenStreetMap |
+| Weather and geocoding | Open-Meteo, OpenStreetMap Nominatim |
+| Typography | Self-hosted DM Sans Variable and Manrope Variable |
+| Delivery | Docker Compose, GitHub Actions, Coolify |
+
+The application is a modular monolith: HTTP routes validate requests, provider adapters normalize external responses, domain rules produce recommendations, and the Nuxt app presents the result. The map requests a fixed nine-point weather grid after map movement settles; one multi-coordinate forecast request supplies the points, and older browser requests are cancelled.
+
+```mermaid
+flowchart LR
+  Browser[Nuxt app] -->|forecast, search, map grid| API[FastAPI]
+  API -->|forecast and geocoding| OpenMeteo[Open-Meteo]
+  API -->|reverse geocoding| Nominatim[OSM Nominatim]
+  Browser -->|attributed map tiles| OSM[OpenStreetMap]
+```
 
 ## Run locally
 
 Requirements: Python 3.12+, Node.js 20+, and npm.
+
+Start the API:
 
 ```sh
 cd backend
@@ -36,15 +53,15 @@ pip install -e '.[dev]'
 uvicorn app.main:app --reload
 ```
 
-In a second terminal:
+In a second terminal, start the web app:
 
 ```sh
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-The API is at `http://localhost:8000`; interactive API documentation is at `/docs`. The web app is at `http://localhost:3000`. The frontend accepts `NUXT_PUBLIC_API_BASE` if the API runs elsewhere.
+Open `http://localhost:3000`. The API health check is `http://localhost:8000/health`, and interactive API docs are at `http://localhost:8000/docs`. Set `NUXT_PUBLIC_API_BASE` if the API runs at another address.
 
 ## Run with Docker Compose
 
@@ -53,7 +70,9 @@ cp .env.example .env
 docker compose -f compose.yaml -f compose.local.yaml up --build
 ```
 
-This binds the local web and API ports to loopback. Open `http://localhost:3000`; the API docs are at `http://localhost:8000/docs`. For Coolify setup, environment variables, domains, health checks, and operational notes, see [the Coolify deployment guide](docs/deployment-coolify.md).
+Open `http://localhost:3000`; API docs are at `http://localhost:8000/docs`. Change `WEB_PORT`, `API_PORT`, `NUXT_PUBLIC_API_BASE`, and `CORS_ORIGINS` in `.env` when those ports or origins are already in use.
+
+For Coolify and the Hetzner CAX21, follow the [deployment guide](docs/deployment-coolify.md). The production deployment is intentionally deferred until this branch is reviewed and merged into `main`.
 
 ## Quality checks
 
@@ -71,30 +90,29 @@ npm test
 npm run build
 ```
 
-GitHub Actions runs these API checks and the frontend type check and production build on pushes to `main` and pull requests targeting `main`.
+GitHub Actions runs the API lint, format, coverage, and test checks plus the frontend type check, unit tests, and production build on pushes to `main` and pull requests targeting `main`.
 
-Open-Meteo supplies the weather forecast and city search; OpenStreetMap Nominatim resolves nearby place names. The free Open-Meteo API is limited to non-commercial use; review its current terms before using this project commercially or scaling traffic.
+## Data, location, and attribution
 
-Current coordinates or a point selected on the map are sent to Open-Meteo for a forecast. The app asks the browser for permission and shows a fallback city if access is denied. Map tiles come from the standard OpenStreetMap tile service and include visible attribution; keep usage appropriate for a small demo and follow its tile policy. See [the location and preferences decision](docs/decisions/0002-location-and-preferences.md).
+- Weather forecasts and city suggestions come from [Open-Meteo](https://open-meteo.com/). The map layer uses one multi-coordinate forecast request per settled map view.
+- Map dots are weather-model grid samples, not station observations or radar imagery.
+- Nearby place names are resolved with [OpenStreetMap Nominatim](https://nominatim.org/). Map tiles use the standard [OpenStreetMap tile service](https://operations.osmfoundation.org/policies/tiles/), with visible attribution. These public services suit a small demo; review their usage rules and choose a service plan before scaling traffic.
+- On page load, the app asks the browser for location so it can show nearby weather without an extra search; visitors can deny the request, and **Use my location** retries it. Coordinates are sent to Open-Meteo for the forecast and to Nominatim for the nearby place name. WeatherCast does not store them.
+- Open-Meteo's free API is limited to non-commercial use. Review its current terms before commercial use.
+- DM Sans and Manrope are bundled with the web app under the SIL Open Font License 1.1. License texts are in [`frontend/public/fonts`](frontend/public/fonts/).
 
-## Repository map
+## Repository guide
 
 ```text
-backend/     FastAPI application and weather domain
-frontend/    Nuxt application
-docs/        decisions, product scope, and contribution workflow
+backend/      FastAPI routes, provider adapters, weather rules, and tests
+frontend/     Nuxt pages, map and chart components, and frontend tests
+docs/         deployment, decisions, roadmap, and portfolio notes
 ```
 
-## Development workflow
+Keep `main` releasable. Use short-lived branches such as `feat/weather-map-layers` and Conventional Commit messages such as `feat(api): add batched weather map points`. Keep provider-specific parsing in adapters, explain architectural changes in `docs/decisions/`, and include verification notes with each contribution. See [CONTRIBUTING.md](CONTRIBUTING.md), the [roadmap](docs/ROADMAP.md), and [portfolio project ideas](docs/PORTFOLIO.md).
 
-- Keep `main` releasable. Work in short-lived branches named `feat/...`, `fix/...`, `docs/...`, or `chore/...`.
-- Use [Conventional Commits](https://www.conventionalcommits.org/), for example `feat(api): add city search`.
-- Keep provider-specific parsing in the provider adapter. Keep activity rules independent from FastAPI and HTTP clients.
-- Explain meaningful architectural choices in `docs/decisions/` and update the README when setup or product behavior changes.
-- Prefer small pull requests with a clear problem statement, screenshots for UI changes, and a verification note.
+Before a release, follow the [manual QA checklist](docs/qa-checklist.md) for search, browser location, map behavior, accessibility, responsive layouts, and container smoke checks.
 
-See [the product and learning roadmap](docs/ROADMAP.md), [portfolio project series](docs/PORTFOLIO.md), [architecture decisions](docs/decisions/), and [contribution guide](CONTRIBUTING.md).
+## Portfolio direction
 
-## Portfolio series ideas
-
-WeatherCast is project one in a portfolio that can show distinct engineering skills: a data analysis story with reproducible notebooks; a polished public API integration; an inventory and low-stock workflow; a small commerce/catalog experience; a vehicle marketplace with search and saved listings; a game-related stats or companion tool; and a developer utility with a CLI plus web UI. Each project should solve a focused problem and include a live demo, concise documentation, and a short write-up of trade-offs.
+WeatherCast is the first of a small set of complete projects. Future ideas include a reproducible city-data story, a public API explorer, inventory and low-stock workflows, a vehicle comparison marketplace, a game companion, and a developer tool with both CLI and web interfaces. Each should solve a focused problem and show a different engineering skill.
