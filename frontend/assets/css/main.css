@@ -12,42 +12,37 @@ button, input { font: inherit; }
 button:focus-visible, input:focus-visible { outline: 3px solid #7dcdb0; outline-offset: 3px; }
 .display { font-family: 'Manrope', sans-serif; }
 
-.weather-page { position: relative; isolation: isolate; }
+.weather-page { position: relative; isolation: isolate; overflow-x: clip; }
 .weather-page::before {
   content: '';
   position: absolute;
-  inset: -8%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: .75;
-  background: radial-gradient(ellipse at 15% 5%, rgb(125 211 252 / 16%), transparent 35%), radial-gradient(ellipse at 83% 12%, rgb(186 230 253 / 14%), transparent 36%), radial-gradient(ellipse at 58% 80%, rgb(148 163 184 / 8%), transparent 42%);
-  animation: ambient-drift 34s ease-in-out infinite alternate;
+  opacity: .86;
+  background: radial-gradient(ellipse at 12% 4%, rgb(125 211 252 / 22%), transparent 34%), radial-gradient(ellipse at 88% 14%, rgb(186 230 253 / 18%), transparent 36%), radial-gradient(ellipse at 56% 72%, rgb(148 163 184 / 11%), transparent 42%);
 }
 .weather-page::after {
   content: '';
   position: absolute;
-  top: -13rem;
-  right: -13rem;
-  width: min(72vw, 680px);
+  top: 0;
+  right: 0;
+  width: min(54vw, 560px);
   aspect-ratio: 1;
   z-index: 0;
   pointer-events: none;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgb(56 189 248 / 12%) 0%, rgb(99 102 241 / 5%) 38%, transparent 70%);
-  filter: blur(18px);
-  animation: ambient-orb 27s ease-in-out infinite alternate;
+  opacity: .48;
+  background: radial-gradient(circle, rgb(56 189 248 / 22%) 0%, rgb(99 102 241 / 9%) 38%, transparent 70%);
+  filter: blur(22px);
+  animation: ambient-breathe 14s ease-in-out infinite alternate;
 }
-.weather-page[data-theme='dark']::before { opacity: .52; background: radial-gradient(ellipse at 15% 5%, rgb(56 189 248 / 10%), transparent 35%), radial-gradient(ellipse at 83% 12%, rgb(99 102 241 / 10%), transparent 36%), radial-gradient(ellipse at 58% 80%, rgb(14 165 233 / 5%), transparent 42%); }
-.weather-page[data-theme='dark']::after { background: radial-gradient(circle, rgb(56 189 248 / 9%) 0%, rgb(99 102 241 / 4%) 38%, transparent 70%); }
+.weather-page[data-theme='dark']::before { opacity: .9; background: radial-gradient(ellipse at 12% 4%, rgb(56 189 248 / 18%), transparent 34%), radial-gradient(ellipse at 88% 14%, rgb(99 102 241 / 19%), transparent 36%), radial-gradient(ellipse at 56% 72%, rgb(14 165 233 / 9%), transparent 42%); }
+.weather-page[data-theme='dark']::after { background: radial-gradient(circle, rgb(56 189 248 / 20%) 0%, rgb(99 102 241 / 10%) 38%, transparent 70%); }
 
-@keyframes ambient-drift {
-  from { transform: translate3d(-1%, -0.5%, 0) scale(1); }
-  to { transform: translate3d(1%, 0.5%, 0) scale(1.04); }
-}
-
-@keyframes ambient-orb {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to { transform: translate3d(-2rem, 1.5rem, 0) scale(1.08); }
+@keyframes ambient-breathe {
+  from { opacity: .32; }
+  to { opacity: .62; }
 }
 
 .weather-scene-glow { background: radial-gradient(circle, rgb(255 226 161 / 22%) 0%, transparent 70%); }
@@ -69,6 +64,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid #7dcdb0; outline-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .weather-page::before, .weather-page::after { animation: none; }
+  .weather-page::after { animation: none; opacity: .48; }
   .weather-scene-art, .weather-sun-rays, .weather-rain { animation: none; }
 }
