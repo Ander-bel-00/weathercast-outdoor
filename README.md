@@ -8,7 +8,9 @@ WeatherCast is an open-source weather context dashboard that helps people decide
 
 - Search for a city and inspect current conditions plus the next 24 hours.
 - Read the hourly temperature and rain trend in a chart, with a weather scene that adapts to current conditions.
+- Follow a subtle local-time atmosphere: a soft morning or afternoon sky, a restrained evening tint, and stars at night. The forecast scene remains tied to actual weather conditions.
 - See why a walk, run, or bike ride is recommended or discouraged.
+- Get nearby weather automatically after granting browser location permission; preferences for language and theme stay in the browser.
 - Explore conditions on an interactive map and compare nearby places (next milestones).
 - Configure personal thresholds and alerts after the core experience is reliable.
 
@@ -46,6 +48,8 @@ npm run dev
 The API is at `http://localhost:8000`; interactive API documentation is at `/docs`. The web app is at `http://localhost:3000`. The frontend accepts `NUXT_PUBLIC_API_BASE` if the API runs elsewhere.
 
 Open-Meteo forecast data is shown with attribution and GeoNames is credited for geocoding. The free Open-Meteo API is limited to non-commercial use; review its current terms before using this project commercially or scaling traffic.
+
+Current coordinates are sent to Open-Meteo for a forecast and to OpenStreetMap Nominatim to identify a nearby place. The app asks the browser for permission, shows a fallback city if access is denied, caches reverse lookups, and credits OpenStreetMap. See [the location and preferences decision](docs/decisions/0002-location-and-preferences.md).
 
 ## Repository map
 

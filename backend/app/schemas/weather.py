@@ -27,6 +27,13 @@ class ActivityRecommendation(BaseModel):
     reasons: list[str]
 
 
+class WeatherRequest(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    location_name: str = Field(min_length=1, max_length=100)
+    language: Literal["en", "es"] = "en"
+
+
 class WeatherReport(BaseModel):
     location_name: str
     latitude: float

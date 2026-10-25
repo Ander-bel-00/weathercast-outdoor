@@ -17,12 +17,12 @@ const scene = computed<WeatherSceneType>(() => {
 })
 
 const atmospheres: Record<WeatherSceneType, string> = {
-  sunny: 'from-[#24564b] via-[#3f7561] to-[#a48455]',
-  cloudy: 'from-[#23464a] via-[#3e686b] to-[#78908d]',
-  foggy: 'from-[#344e51] via-[#5f7778] to-[#879a99]',
-  rainy: 'from-[#193e4b] via-[#315d6b] to-[#6c8b91]',
-  snowy: 'from-[#334d60] via-[#536e80] to-[#8197a0]',
-  stormy: 'from-[#202d44] via-[#354b66] to-[#617387]',
+  sunny: 'from-[#244b68] via-[#3f7290] to-[#b58a56]',
+  cloudy: 'from-[#263e58] via-[#4a6682] to-[#8396a8]',
+  foggy: 'from-[#354b61] via-[#5c7187] to-[#8d9eae]',
+  rainy: 'from-[#193752] via-[#315c7d] to-[#6b8da7]',
+  snowy: 'from-[#334d68] via-[#58748e] to-[#8aa0b0]',
+  stormy: 'from-[#202d49] via-[#3c5275] to-[#647da0]',
 }
 
 const atmosphere = computed(() => atmospheres[scene.value])

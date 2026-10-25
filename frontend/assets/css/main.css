@@ -5,10 +5,55 @@
 @tailwind utilities;
 
 :root { font-family: 'DM Sans', sans-serif; color: #16322e; background: #f4f7f3; font-synthesis: none; }
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; background: #0b1220; }
 body { margin: 0; min-width: 320px; }
 button, input { font: inherit; }
 button:focus-visible, input:focus-visible { outline: 3px solid #7dcdb0; outline-offset: 3px; }
 .display { font-family: 'Manrope', sans-serif; }
+
+.weather-page { position: relative; isolation: isolate; }
+.weather-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: background 800ms ease;
+}
+.weather-page::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(58vw, 760px);
+  height: 440px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 800ms ease;
+  background-image: radial-gradient(1.5px 1.5px at 15% 18%, rgb(255 255 255 / 88%) 99%, transparent), radial-gradient(1px 1px at 32% 34%, rgb(255 255 255 / 78%) 99%, transparent), radial-gradient(1.5px 1.5px at 49% 12%, rgb(255 255 255 / 82%) 99%, transparent), radial-gradient(1px 1px at 68% 25%, rgb(255 255 255 / 82%) 99%, transparent), radial-gradient(1.5px 1.5px at 85% 14%, rgb(255 255 255 / 86%) 99%, transparent), radial-gradient(1px 1px at 78% 47%, rgb(255 255 255 / 72%) 99%, transparent), radial-gradient(1px 1px at 24% 52%, rgb(255 255 255 / 66%) 99%, transparent);
+  mask-image: linear-gradient(to bottom, black 0%, transparent 94%);
+}
+.weather-page[data-time-of-day='morning']::before {
+  background: radial-gradient(ellipse at 12% 0%, rgb(125 211 252 / 11%), transparent 42%), radial-gradient(ellipse at 88% 5%, rgb(253 186 116 / 4%), transparent 38%);
+}
+.weather-page[data-time-of-day='afternoon']::before {
+  background: radial-gradient(ellipse at 82% 4%, rgb(56 189 248 / 10%), transparent 42%), radial-gradient(ellipse at 8% 28%, rgb(129 198 230 / 5%), transparent 42%);
+}
+.weather-page[data-time-of-day='evening']::before {
+  background: radial-gradient(ellipse at 88% 3%, rgb(251 146 60 / 5%), transparent 42%), radial-gradient(ellipse at 15% 22%, rgb(129 140 248 / 7%), transparent 40%);
+}
+.weather-page[data-time-of-day='night']::before {
+  background: radial-gradient(ellipse at 82% 0%, rgb(99 102 241 / 10%), transparent 42%), radial-gradient(ellipse at 8% 25%, rgb(56 189 248 / 6%), transparent 40%);
+}
+.weather-page[data-theme='dark'][data-time-of-day='morning']::before { background: radial-gradient(ellipse at 12% 0%, rgb(56 189 248 / 5%), transparent 42%), radial-gradient(ellipse at 88% 5%, rgb(251 146 60 / 2%), transparent 38%); }
+.weather-page[data-theme='dark'][data-time-of-day='afternoon']::before { background: radial-gradient(ellipse at 82% 4%, rgb(56 189 248 / 6%), transparent 42%), radial-gradient(ellipse at 8% 28%, rgb(45 212 191 / 3%), transparent 42%); }
+.weather-page[data-theme='dark'][data-time-of-day='evening']::before { background: radial-gradient(ellipse at 88% 3%, rgb(251 146 60 / 3%), transparent 42%), radial-gradient(ellipse at 15% 22%, rgb(129 140 248 / 4%), transparent 40%); }
+.weather-page[data-theme='dark'][data-time-of-day='night']::before { background: radial-gradient(ellipse at 82% 0%, rgb(99 102 241 / 6%), transparent 42%), radial-gradient(ellipse at 8% 25%, rgb(56 189 248 / 4%), transparent 40%); }
+.weather-page[data-time-of-day='night']::after { opacity: .58; }
+.weather-page[data-theme='light'][data-time-of-day='night']::after { background-image: radial-gradient(1.5px 1.5px at 15% 18%, rgb(51 65 85 / 70%) 99%, transparent), radial-gradient(1px 1px at 32% 34%, rgb(51 65 85 / 58%) 99%, transparent), radial-gradient(1.5px 1.5px at 49% 12%, rgb(51 65 85 / 68%) 99%, transparent), radial-gradient(1px 1px at 68% 25%, rgb(51 65 85 / 64%) 99%, transparent), radial-gradient(1.5px 1.5px at 85% 14%, rgb(51 65 85 / 72%) 99%, transparent), radial-gradient(1px 1px at 78% 47%, rgb(51 65 85 / 56%) 99%, transparent), radial-gradient(1px 1px at 24% 52%, rgb(51 65 85 / 52%) 99%, transparent); }
+.weather-page[data-theme='dark'][data-time-of-day='night']::after { opacity: .82; }
 
 .weather-scene-glow { background: radial-gradient(circle, rgb(255 226 161 / 22%) 0%, transparent 70%); }
 .weather-scene-art { filter: drop-shadow(0 16px 24px rgb(9 35 42 / 12%)); animation: weather-float 7s ease-in-out infinite; }
@@ -29,5 +74,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid #7dcdb0; outline-
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .weather-page::before, .weather-page::after { transition: none; }
   .weather-scene-art, .weather-sun-rays, .weather-rain { animation: none; }
 }

@@ -1,18 +1,16 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from typing import Literal
 
 import httpx
 
+from app.providers.errors import ProviderError
 from app.schemas.location import Location
 from app.schemas.weather import CurrentConditions, HourlyPoint, WeatherReport
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
-
-
-class ProviderError(Exception):
-    """Raised when the weather provider cannot return usable data."""
 
 
 class OpenMeteoClient:
@@ -21,8 +19,8 @@ class OpenMeteoClient:
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
         self._client = client
 
-    async def search_locations(self, query: str) -> list[Location]:
-        params = {"name": query, "count": 8, "language": "en", "format": "json"}
+    async def search_locations(self, query: str, language: Literal["en", "es"] = "en") -> list[Location]:
+        params = {"name": query, "count": 8, "language": language, "format": "json"}
         try:
             async with self._client_scope() as client:
                 response = await client.get(GEOCODING_URL, params=params)
