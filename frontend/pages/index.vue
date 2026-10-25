@@ -217,7 +217,7 @@ onUnmounted(() => {
     <div class="relative z-10 mx-auto max-w-6xl">
       <header class="flex flex-wrap items-center justify-between gap-4">
         <a href="#home" class="flex items-center gap-3 no-underline" :aria-label="copy.brandHome">
-          <span class="grid h-10 w-10 place-items-center rounded-2xl bg-[#173e37] text-xl text-white dark:bg-sky-500 dark:text-slate-950">☼</span>
+          <img src="/weathercast-icon.svg" alt="" aria-hidden="true" class="h-10 w-10 rounded-2xl shadow-sm" width="40" height="40">
           <span class="display text-lg font-extrabold tracking-tight text-[#173e37] dark:text-slate-100">weathercast<span class="text-[#76aa91] dark:text-sky-300">.</span></span>
         </a>
         <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
