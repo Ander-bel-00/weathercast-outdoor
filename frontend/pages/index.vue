@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Location, WeatherReport } from '~/types/weather'
 import { messages, type Language } from '~/utils/messages'
+import { formatForecastDay, getInitialForecastDate, selectHoursForDay } from '~/utils/forecast'
 
 const config = useRuntimeConfig()
 const language = ref<Language>('en')
@@ -23,6 +24,9 @@ const DEFAULT_LOCATION: Location = {
 }
 const selected = ref<Location>({ ...DEFAULT_LOCATION })
 const report = ref<WeatherReport | null>(null)
+const selectedDayDate = ref('')
+const mapDialog = ref<HTMLDialogElement | null>(null)
+const showMap = ref(false)
 const loading = ref(false)
 const searching = ref(false)
 const locating = ref(false)
@@ -30,11 +34,15 @@ const isCurrentLocation = ref(false)
 const error = ref('')
 const locationNoticeKey = ref<'locationDetected' | 'locationDenied' | 'locationUnavailable' | 'locationLookupFailed' | null>(null)
 const locationNotice = computed(() => locationNoticeKey.value ? copy.value[locationNoticeKey.value] : '')
-const upcomingHours = computed(() => {
-  if (!report.value) return []
-  return report.value.hourly
-    .filter((hour) => hour.time >= report.value!.current.time)
-    .slice(0, 24)
+const selectedDay = computed(() => report.value?.daily.find((day) => day.date === selectedDayDate.value)
+  ?? report.value?.daily[0])
+const selectedDayHours = computed(() => report.value && selectedDay.value
+  ? selectHoursForDay(report.value.hourly, selectedDay.value.date, report.value.current.time)
+  : [])
+const selectedDayTitle = computed(() => {
+  if (!report.value || !selectedDay.value) return copy.value.nextDay
+  const index = report.value.daily.findIndex((day) => day.date === selectedDay.value?.date)
+  return formatDay(selectedDay.value.date, Math.max(0, index))
 })
 
 const ratingIcons: Record<string, string> = { good: '↗', caution: '◷', poor: '↘' }
@@ -55,12 +63,34 @@ async function loadWeather(location: Location) {
         language: language.value,
       },
     })
-    if (requestId === weatherRequestId) report.value = nextReport
+    if (requestId === weatherRequestId) {
+      report.value = nextReport
+      if (!nextReport.daily.some((day) => day.date === selectedDayDate.value)) {
+        selectedDayDate.value = getInitialForecastDate(
+          nextReport.daily.map((day) => day.date), nextReport.current.time,
+        )
+      }
+    }
   } catch {
     if (requestId === weatherRequestId) error.value = copy.value.loadError
   } finally {
     if (requestId === weatherRequestId) loading.value = false
   }
+}
+
+function formatDay(date: string, index: number) {
+  return formatForecastDay(date, index, language.value, copy.value.today, copy.value.tomorrow)
+}
+
+async function openMap() {
+  showMap.value = true
+  await nextTick()
+  mapDialog.value?.showModal()
+}
+
+function closeMap() {
+  if (mapDialog.value?.open) mapDialog.value.close()
+  showMap.value = false
 }
 
 async function searchLocations() {
@@ -86,6 +116,23 @@ function chooseLocation(location: Location) {
   locationNoticeKey.value = null
   isCurrentLocation.value = false
   void loadWeather(location)
+}
+
+async function selectMapLocation(point: { latitude: number; longitude: number }) {
+  const location: Location = {
+    id: -1,
+    name: copy.value.mapSelected,
+    country: '',
+    latitude: point.latitude,
+    longitude: point.longitude,
+    timezone: selected.value.timezone,
+  }
+  isCurrentLocation.value = false
+  locationNoticeKey.value = null
+  closeMap()
+  await loadWeather(location)
+  await nextTick()
+  document.getElementById('weather-overview')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function getBrowserPosition() {
@@ -253,6 +300,7 @@ onUnmounted(() => {
               {{ searching ? copy.searching : copy.search }}
             </button>
           </div>
+          <button type="button" class="mt-3 inline-flex items-center gap-2 rounded-xl px-2 py-2 text-xs font-semibold text-[#55796b] transition hover:bg-[#eaf2ec] dark:text-sky-300 dark:hover:bg-slate-800" @click="openMap"><span aria-hidden="true">◎</span>{{ copy.openMap }}</button>
           <ul v-if="locations.length" class="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-[#dce7df] bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800" :aria-label="copy.citySearchResults">
             <li v-for="location in locations" :key="location.id">
               <button type="button" class="w-full rounded-xl px-3 py-3 text-left text-sm text-[#24473e] hover:bg-[#f1f6f1] dark:text-slate-100 dark:hover:bg-slate-700" @click="chooseLocation(location)">
@@ -266,7 +314,7 @@ onUnmounted(() => {
       <p v-if="error" role="alert" class="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ error }}</p>
       <p v-if="locationNotice" role="status" class="mt-4 text-sm text-[#55796b] dark:text-sky-300">{{ locationNotice }}</p>
 
-      <section class="mt-10 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]" aria-live="polite">
+      <section id="weather-overview" class="mt-10 grid scroll-mt-6 gap-5 lg:grid-cols-[0.9fr_1.1fr]" aria-live="polite">
         <article class="relative overflow-hidden rounded-[2rem] p-7 text-white shadow-[0_22px_55px_rgba(23,62,55,0.15)] sm:p-9">
           <WeatherScene :code="report?.current.weather_code ?? 2" />
           <div class="relative z-10">
@@ -294,6 +342,7 @@ onUnmounted(() => {
             <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.recommendationEyebrow }}</p><h2 class="display mt-2 text-xl font-bold text-[#193f36] dark:text-slate-100">{{ copy.recommendationTitle }}</h2></div>
             <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#eef5ef] text-xl text-[#448267] dark:bg-slate-800 dark:text-sky-300">✳</span>
           </div>
+          <p class="mt-5 text-xs leading-5 text-[#74867c] dark:text-slate-300">{{ copy.recommendationBasis }}</p>
           <div v-if="loading && !report" class="mt-7 text-sm text-[#82958b] dark:text-slate-400">{{ copy.preparing }}</div>
           <div v-else class="mt-6 divide-y divide-[#edf1ed] dark:divide-slate-700">
             <div v-for="recommendation in report?.recommendations" :key="recommendation.activity" class="flex gap-4 py-4 first:pt-0 last:pb-0">
@@ -308,19 +357,42 @@ onUnmounted(() => {
         </article>
       </section>
 
-      <section class="mb-10 mt-5 rounded-[2rem] border border-[#e1e9e2] bg-white p-7 shadow-[0_10px_36px_rgba(28,65,53,0.04)] dark:border-slate-700 dark:bg-slate-900 sm:p-9">
+      <section class="mb-5 mt-5 rounded-[2rem] border border-[#e1e9e2] bg-white p-7 shadow-[0_10px_36px_rgba(28,65,53,0.04)] dark:border-slate-700 dark:bg-slate-900 sm:p-9">
         <div class="flex flex-wrap items-end justify-between gap-4">
-          <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.outlookEyebrow }}</p><h2 class="display mt-2 text-xl font-bold text-[#193f36] dark:text-slate-100">{{ copy.nextDay }}</h2></div>
-          <span class="text-xs text-[#82958b] dark:text-slate-400">{{ copy.chartSubtitle }}</span>
+          <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.outlookEyebrow }}</p><h2 class="display mt-2 text-xl font-bold text-[#193f36] dark:text-slate-100">{{ copy.sevenDayTitle }}</h2></div>
+        </div>
+        <div v-if="report?.daily.length" class="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7" role="group" :aria-label="copy.dailyForecastLabel">
+          <button v-for="(day, index) in report.daily" :key="day.date" type="button" class="rounded-2xl border p-3 text-left transition hover:-translate-y-0.5" :class="selectedDayDate === day.date ? 'border-[#4d9476] bg-[#edf6ef] shadow-sm dark:border-sky-400 dark:bg-slate-800' : 'border-[#e6ede7] bg-white dark:border-slate-700 dark:bg-slate-900'" :aria-pressed="selectedDayDate === day.date" @click="selectedDayDate = day.date">
+            <span class="block text-xs font-bold capitalize text-[#315b4d] dark:text-slate-100">{{ formatDay(day.date, index) }}</span>
+            <span class="mt-1 block text-[10px] text-[#82958b] dark:text-slate-400">{{ conditionLabel(day.weather_code) }}</span>
+            <span class="mt-3 block text-base font-semibold text-[#21483d] dark:text-sky-200" :aria-label="`${copy.high} ${Math.round(day.temperature_max_c)}°, ${copy.low} ${Math.round(day.temperature_min_c)}°`">{{ Math.round(day.temperature_max_c) }}° <span class="text-xs font-normal text-[#82958b] dark:text-slate-400">{{ Math.round(day.temperature_min_c) }}°</span></span>
+            <span class="mt-1 block text-[10px] text-[#74867c] dark:text-slate-300">{{ day.precipitation_probability_max_pct }}% {{ copy.rainChance }}</span>
+            <span class="mt-1 block text-[10px] text-[#74867c] dark:text-slate-300">{{ copy.rain }} {{ day.precipitation_sum_mm.toFixed(1) }} mm · {{ copy.wind }} {{ Math.round(day.wind_speed_max_kmh) }} km/h</span>
+          </button>
+        </div>
+        <div class="mt-8 flex flex-wrap items-end justify-between gap-4">
+          <div><h3 class="display text-lg font-bold text-[#193f36] dark:text-slate-100">{{ selectedDayTitle }}</h3><p class="mt-1 text-xs text-[#82958b] dark:text-slate-400">{{ copy.chartSubtitle }}</p></div>
         </div>
         <div v-if="loading && !report" class="mt-8 text-sm text-[#82958b] dark:text-slate-400">{{ copy.loadingHours }}</div>
-        <HourlyForecastChart v-else-if="report" :hours="upcomingHours" :timezone="report.timezone" :language="language" />
+        <HourlyForecastChart v-else-if="report" :hours="selectedDayHours" :timezone="report.timezone" :language="language" />
       </section>
+
+      <dialog ref="mapDialog" class="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto rounded-[2rem] border border-[#dce7df] bg-white p-0 text-[#16322e] shadow-2xl backdrop:bg-slate-950/70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @close="showMap = false" @click.self="closeMap">
+        <div class="p-5 sm:p-7">
+          <div class="flex items-start justify-between gap-4">
+            <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.outlookEyebrow }}</p><h2 id="map-dialog-title" class="display mt-2 text-xl font-bold">{{ copy.mapTitle }}</h2><p class="mt-2 text-sm text-[#74867c] dark:text-slate-300">{{ copy.mapDescription }}</p></div>
+            <button type="button" class="rounded-xl border border-[#dce7df] px-3 py-2 text-xs font-semibold text-[#55716a] hover:bg-[#f1f6f1] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800" @click="closeMap">{{ copy.closeMap }}</button>
+          </div>
+          <ClientOnly>
+            <WeatherMap v-if="showMap" class="mt-5" :latitude="report?.latitude ?? selected.latitude" :longitude="report?.longitude ?? selected.longitude" :label="selected.name" :language="language" @select="selectMapLocation" />
+          </ClientOnly>
+        </div>
+      </dialog>
 
       <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-[#dfe8e0] py-5 text-xs text-[#85958c] dark:border-slate-700 dark:text-slate-400">
         <span>{{ copy.dataSources }}</span>
         <span v-if="report">{{ copy.forecastFetched }} {{ new Date(report.fetched_at).toLocaleTimeString(language === 'en' ? 'en-US' : 'es-CO', { hour: '2-digit', minute: '2-digit' }) }}</span>
-        <span class="flex gap-3"><a href="https://open-meteo.com/" target="_blank" rel="noreferrer" class="font-semibold text-[#55796b] hover:text-[#244b3d] dark:text-sky-300">{{ copy.source }} ↗</a><a href="https://www.geonames.org/" target="_blank" rel="noreferrer" class="font-semibold text-[#55796b] hover:text-[#244b3d] dark:text-sky-300">GeoNames ↗</a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" class="font-semibold text-[#55796b] hover:text-[#244b3d] dark:text-sky-300">© OpenStreetMap</a></span>
+        <span class="flex gap-3"><a href="https://open-meteo.com/" target="_blank" rel="noreferrer" class="font-semibold text-[#55796b] hover:text-[#244b3d] dark:text-sky-300">{{ copy.source }} ↗</a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" class="font-semibold text-[#55796b] hover:text-[#244b3d] dark:text-sky-300">© OpenStreetMap</a></span>
       </footer>
     </div>
   </main>

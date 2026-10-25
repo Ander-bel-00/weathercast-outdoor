@@ -7,7 +7,7 @@ import httpx
 
 from app.providers.errors import ProviderError
 from app.schemas.location import Location
-from app.schemas.weather import CurrentConditions, HourlyPoint, WeatherReport
+from app.schemas.weather import CurrentConditions, DailyForecast, HourlyPoint, WeatherReport
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -19,7 +19,9 @@ class OpenMeteoClient:
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
         self._client = client
 
-    async def search_locations(self, query: str, language: Literal["en", "es"] = "en") -> list[Location]:
+    async def search_locations(
+        self, query: str, language: Literal["en", "es"] = "en"
+    ) -> list[Location]:
         params = {"name": query, "count": 8, "language": language, "format": "json"}
         try:
             async with self._client_scope() as client:
@@ -45,9 +47,28 @@ class OpenMeteoClient:
         params = {
             "latitude": latitude,
             "longitude": longitude,
-            "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+            "current": ",".join(
+                [
+                    "temperature_2m",
+                    "relative_humidity_2m",
+                    "apparent_temperature",
+                    "precipitation",
+                    "weather_code",
+                    "wind_speed_10m",
+                ]
+            ),
             "hourly": "temperature_2m,precipitation_probability,wind_speed_10m",
-            "forecast_days": 2,
+            "daily": ",".join(
+                [
+                    "weather_code",
+                    "temperature_2m_max",
+                    "temperature_2m_min",
+                    "precipitation_probability_max",
+                    "precipitation_sum",
+                    "wind_speed_10m_max",
+                ]
+            ),
+            "forecast_days": 7,
             "timezone": "auto",
             "wind_speed_unit": "kmh",
         }
@@ -58,6 +79,7 @@ class OpenMeteoClient:
                 payload = response.json()
                 current = payload["current"]
                 hourly = payload["hourly"]
+                daily = payload["daily"]
                 current_conditions = CurrentConditions(
                     time=current["time"],
                     temperature_c=current["temperature_2m"],
@@ -76,6 +98,20 @@ class OpenMeteoClient:
                     )
                     for index, time in enumerate(hourly["time"])
                 ]
+                daily_points = [
+                    DailyForecast(
+                        date=day,
+                        weather_code=daily["weather_code"][index],
+                        temperature_max_c=daily["temperature_2m_max"][index],
+                        temperature_min_c=daily["temperature_2m_min"][index],
+                        precipitation_probability_max_pct=daily["precipitation_probability_max"][
+                            index
+                        ],
+                        precipitation_sum_mm=daily["precipitation_sum"][index],
+                        wind_speed_max_kmh=daily["wind_speed_10m_max"][index],
+                    )
+                    for index, day in enumerate(daily["time"])
+                ]
                 return WeatherReport(
                     location_name=name,
                     latitude=payload["latitude"],
@@ -84,6 +120,7 @@ class OpenMeteoClient:
                     fetched_at=datetime.now(UTC),
                     current=current_conditions,
                     hourly=hourly_points,
+                    daily=daily_points,
                 )
         except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError from exc

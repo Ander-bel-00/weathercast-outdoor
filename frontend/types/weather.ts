@@ -8,6 +8,13 @@ export interface Location {
   timezone: string
 }
 
+export interface HourlyPoint {
+  time: string
+  temperature_c: number
+  precipitation_probability_pct: number
+  wind_speed_kmh: number
+}
+
 export interface WeatherReport {
   location_name: string
   latitude: number
@@ -23,11 +30,15 @@ export interface WeatherReport {
     wind_speed_kmh: number
     weather_code: number
   }
-  hourly: Array<{
-    time: string
-    temperature_c: number
-    precipitation_probability_pct: number
-    wind_speed_kmh: number
+  hourly: HourlyPoint[]
+  daily: Array<{
+    date: string
+    weather_code: number
+    temperature_max_c: number
+    temperature_min_c: number
+    precipitation_probability_max_pct: number
+    precipitation_sum_mm: number
+    wind_speed_max_kmh: number
   }>
   recommendations: Array<{
     activity: 'walk' | 'run' | 'bike'

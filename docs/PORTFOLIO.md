@@ -22,4 +22,4 @@ The goal is to show range through a few complete, useful projects—not to start
 4. Publish a demo and a short engineering write-up once the project is dependable.
 5. Pick a different primary learning goal for each project so the portfolio shows range without repeating the same CRUD app.
 
-For WeatherCast, the memorable feature is the traceable recommendation: users see the forecast factors and can eventually personalize the thresholds. The MVP uses deterministic logic; an “AI” label should only appear if a later feature uses a real model and explains what it adds.
+For WeatherCast, the memorable feature is the traceable recommendation: users see the specific forecast values and time that affected the advice. The MVP uses deterministic logic; an “AI” label should only appear if a later feature uses a real model and explains what it adds.
