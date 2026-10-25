@@ -202,11 +202,25 @@ async function selectMapLocation(point: { latitude: number; longitude: number })
 
 function getBrowserPosition() {
   return new Promise<GeolocationPosition>((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: false,
-      maximumAge: 5 * 60 * 1000,
-      timeout: 7_000,
-    })
+    const timeoutId = window.setTimeout(
+      () => reject(new Error('Location request exceeded the UI wait limit')),
+      7_500,
+    )
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        window.clearTimeout(timeoutId)
+        resolve(position)
+      },
+      (error) => {
+        window.clearTimeout(timeoutId)
+        reject(error)
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: 5 * 60 * 1000,
+        timeout: 7_000,
+      },
+    )
   })
 }
 
