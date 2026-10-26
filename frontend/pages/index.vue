@@ -164,8 +164,9 @@ function closeLocationSuggestions() {
 }
 
 function handleSearchEnter() {
-  if (activeLocationIndex.value >= 0 && locations.value[activeLocationIndex.value]) {
-    chooseLocation(locations.value[activeLocationIndex.value])
+  const selectedLocation = locations.value[activeLocationIndex.value]
+  if (selectedLocation) {
+    chooseLocation(selectedLocation)
     return
   }
   searchLocations()

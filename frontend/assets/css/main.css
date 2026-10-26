@@ -1,9 +1,7 @@
 @import '@fontsource-variable/dm-sans/wght.css';
 @import '@fontsource-variable/manrope/wght.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 :root { font-family: 'DM Sans Variable', sans-serif; color: #16322e; background: #f4f7f3; font-synthesis: none; }
 :root[data-theme='light'] { color-scheme: light; }

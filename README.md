@@ -23,7 +23,7 @@ Screenshots will be added after the first public release.
 | Area | Tools |
 | --- | --- |
 | API and weather rules | Python 3.12, FastAPI, Pydantic, HTTPX |
-| Web app | Vue 3, Nuxt 3, TypeScript, Tailwind CSS |
+| Web app | Vue 3, Nuxt 4, TypeScript, Tailwind CSS 4 |
 | Charts and map | Custom accessible SVG chart, Leaflet, OpenStreetMap |
 | Weather and geocoding | Open-Meteo, OpenStreetMap Nominatim |
 | Typography | Self-hosted DM Sans Variable and Manrope Variable |
@@ -41,7 +41,7 @@ flowchart LR
 
 ## Run locally
 
-Requirements: Python 3.12+, Node.js 20+, and npm.
+Requirements: Python 3.12+, Node.js 22.22.3+ (or 24.15+), and npm.
 
 Start the API:
 
@@ -85,6 +85,7 @@ pytest --cov=app --cov-report=term-missing --cov-fail-under=80
 
 cd ../frontend
 npm ci
+npm audit --omit=dev --audit-level=moderate
 npm run typecheck
 npm test
 npm run build
