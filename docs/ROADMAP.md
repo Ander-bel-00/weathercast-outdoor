@@ -2,30 +2,40 @@
 
 ## MVP: a useful forecast, not a weather clone
 
-1. Search for a city and load its current and hourly conditions.
-2. Show clear loading, empty, and error states.
-3. Explain outdoor activity suggestions with the forecast factors that affected them.
-4. Add a responsive, accessible dashboard and document the data source and its limits.
+1. Search for a city and load its current, hourly, and seven-day conditions.
+2. Show selectable daily summaries and an hourly temperature and rain chart for the selected day, plus a condition-specific visual scene.
+3. Detect the visitor's location after browser permission, with a useful fallback when permission is denied.
+4. Let visitors choose English or Spanish and system, light, or dark appearance.
+5. Show clear loading, empty, and error states.
+6. Explain outdoor activity suggestions with concrete weather factors from the current conditions and next three hours.
+7. Keep the dashboard responsive, accessible, and clear about its data source and limits.
 
 ## Next milestones
 
+### Release candidate: implemented
+
+- **Implemented:** explainable walk, run, and cycling guidance derived from current conditions and the next three hours. The app applies its own activity-specific weather rules; visitors do not need to configure meteorological thresholds.
+- **Implemented:** a seven-day outlook, hourly chart, nearby weather map layers, responsive layout, English/Spanish copy, and system/light/dark themes.
+- **Implemented:** backend and frontend quality checks in GitHub Actions, a Docker Compose health check, and a Coolify deployment guide.
+- **Release checks:** review the pull request and its CI checks, merge the reviewed branch into `main`, deploy that commit to Coolify, then add production screenshots and the public URL here and in the README.
+
 ### Map and spatial context
 
-- Add a Leaflet map with selectable places and weather overlays.
-- Compare a few nearby points and show when/where each forecast was fetched.
+- **Implemented:** compare nine forecast points in the visible map area with temperature, rain-probability, and wind layers. Choosing a point loads the full hourly and daily forecast.
+- **Implemented:** batch all nine coordinate pairs into one forecast-provider request after map movement settles; cancel stale requests in the browser and reject oversized map bounds in the API.
+- **Next:** consider a weather-tile provider if usage grows beyond a small portfolio demo.
 - Respect OpenStreetMap tile attribution and usage policy; avoid treating the standard tile service as a free bulk tile CDN.
 
-### Personalization and data quality
+### Data quality and future improvements
 
-- Let people adjust thresholds (wind, precipitation, temperature) and save preferences.
-- Add caching, provider timeouts, rate-limit handling, and a visible last-updated time.
-- Track provider attribution and forecast freshness.
+- Add caching and provider rate-limit handling if usage grows.
+- Monitor provider availability and forecast freshness after the first deployment.
 
 ### Portfolio polish
 
-- Add CI for formatting, linting, type checks, and unit tests.
-- Add Docker Compose for Coolify, verify ARM64-compatible images for the CAX21, document backups and operations, then publish a demo on the VPS.
-- Publish architecture notes and a short case study explaining what was learned.
+- Add repeatable browser-level checks for city search, geolocation permission states, map layer selection, and narrow viewports.
+- Publish the Coolify deployment and verify ARM64 images on the CAX21.
+- Add release screenshots and publish a short case study explaining what was learned.
 
 ## Product boundaries
 

@@ -1,7 +1,11 @@
+import tailwindcss from '@tailwindcss/vite'
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-25',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss'],
+  vite: {
+    plugins: [tailwindcss()],
+  },
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
@@ -10,8 +14,18 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'WeatherCast — clima con contexto',
-      meta: [{ name: 'description', content: 'Decide mejor qué hacer al aire libre con el clima de las próximas horas.' }],
+      title: 'WeatherCast — weather with context',
+      meta: [
+        { name: 'description', content: 'Make better outdoor plans with weather context for the hours ahead.' },
+        { name: 'theme-color', content: '#173e37' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'WeatherCast' },
+        { property: 'og:title', content: 'WeatherCast — weather with context' },
+        { property: 'og:description', content: 'Make better outdoor plans with weather context for the hours ahead.' },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/weathercast-icon.svg' },
+      ],
     },
   },
 })
