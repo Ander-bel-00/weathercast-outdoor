@@ -12,22 +12,28 @@
 
 ## Next milestones
 
+### Release candidate: implemented
+
+- **Implemented:** explainable walk, run, and cycling guidance derived from current conditions and the next three hours. The app applies its own activity-specific weather rules; visitors do not need to configure meteorological thresholds.
+- **Implemented:** a seven-day outlook, hourly chart, nearby weather map layers, responsive layout, English/Spanish copy, and system/light/dark themes.
+- **Implemented:** backend and frontend quality checks in GitHub Actions, a Docker Compose health check, and a Coolify deployment guide.
+- **Release checks:** review the pull request and its CI checks, merge the reviewed branch into `main`, deploy that commit to Coolify, then add production screenshots and the public URL here and in the README.
+
 ### Map and spatial context
 
 - **Implemented:** compare nine forecast points in the visible map area with temperature, rain-probability, and wind layers. Choosing a point loads the full hourly and daily forecast.
 - **Implemented:** batch all nine coordinate pairs into one forecast-provider request after map movement settles; cancel stale requests in the browser and reject oversized map bounds in the API.
-- **Next:** show a visible data timestamp and consider a weather-tile provider if usage grows beyond a small portfolio demo.
+- **Next:** consider a weather-tile provider if usage grows beyond a small portfolio demo.
 - Respect OpenStreetMap tile attribution and usage policy; avoid treating the standard tile service as a free bulk tile CDN.
 
-### Personalization and data quality
+### Data quality and future improvements
 
-- Add caching, provider timeouts, rate-limit handling, and a visible last-updated time.
-- Track provider attribution and forecast freshness.
+- Add caching and provider rate-limit handling if usage grows.
+- Monitor provider availability and forecast freshness after the first deployment.
 
 ### Portfolio polish
 
 - Add repeatable browser-level checks for city search, geolocation permission states, map layer selection, and narrow viewports.
-- Add provider freshness/availability monitoring.
 - Publish the Coolify deployment and verify ARM64 images on the CAX21.
 - Add release screenshots and publish a short case study explaining what was learned.
 

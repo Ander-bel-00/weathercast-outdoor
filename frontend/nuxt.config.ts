@@ -1,6 +1,9 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-25',
   devtools: { enabled: true },
+  // Keep route matching exact; this also avoids relying on Nuxt 3's vulnerable
+  // case-insensitive route-rule matching. This app currently defines no routeRules.
+  router: { options: { sensitive: true } },
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
