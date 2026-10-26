@@ -16,7 +16,19 @@ The advice uses documented, deterministic rules. There is no AI label or hidden 
 
 ## Screenshots
 
-Production screenshots are still to be added. The live demo is available at [weathercast.anderbel.com](https://weathercast.anderbel.com).
+### Desktop dashboard
+
+![WeatherCast desktop dashboard with current conditions and outdoor activity guidance](docs/screenshots/weathercast-desktop.png)
+
+### Mobile layout
+
+![WeatherCast responsive mobile layout](docs/screenshots/weathercast-mobile.png)
+
+### Interactive weather map
+
+![WeatherCast weather map with a selected forecast point](docs/screenshots/weathercast-map.png)
+
+Try the live demo at [weathercast.anderbel.com](https://weathercast.anderbel.com).
 
 ## Live demo
 
