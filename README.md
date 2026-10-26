@@ -16,7 +16,15 @@ The advice uses documented, deterministic rules. There is no AI label or hidden 
 
 ## Screenshots
 
-Screenshots will be added after the first public release.
+Production screenshots are still to be added. The live demo is available at [weathercast.anderbel.com](https://weathercast.anderbel.com).
+
+## Live demo
+
+- **Web app:** [https://weathercast.anderbel.com](https://weathercast.anderbel.com)
+- **API health:** [https://api.weathercast.anderbel.com/health](https://api.weathercast.anderbel.com/health)
+- **Interactive API docs:** [https://api.weathercast.anderbel.com/docs](https://api.weathercast.anderbel.com/docs)
+
+The API health endpoint should return `{"status":"ok"}`. The web app and API are deployed separately with Docker Compose on Coolify.
 
 ## Technology
 
@@ -72,7 +80,7 @@ docker compose -f compose.yaml -f compose.local.yaml up --build
 
 Open `http://localhost:3000`; API docs are at `http://localhost:8000/docs`. Change `WEB_PORT`, `API_PORT`, `NUXT_PUBLIC_API_BASE`, and `CORS_ORIGINS` in `.env` when those ports or origins are already in use.
 
-For Coolify and the Hetzner CAX21, follow the [deployment guide](docs/deployment-coolify.md). The production deployment is intentionally deferred until this branch is reviewed and merged into `main`.
+For the production setup on Coolify and the Hetzner CAX21, see the [deployment guide](docs/deployment-coolify.md).
 
 ## Quality checks
 

@@ -6,7 +6,7 @@ The goal is to show range through a few complete, useful projects—not to start
 
 | Project | What it solves | Skills it makes visible |
 | --- | --- | --- |
-| **WeatherCast** | Helps people plan outdoor activities using forecast context and explainable guidance. | Python API, third-party data, Vue/Nuxt, charts/maps, deployment. |
+| **WeatherCast** ([live demo](https://weathercast.anderbel.com), [source](https://github.com/Ander-bel-00/weathercast-outdoor)) | Helps people plan outdoor activities using forecast context and explainable guidance. | Python API, third-party data, Vue/Nuxt, charts/maps, CI, Docker Compose, and deployment on Coolify. |
 | **City Signals** | Tells a compact data story about heat, rain, or air quality across cities and years. | Data cleanup, Pandas, analysis notebooks, chart design, reproducibility. |
 | **OpenShelf** | Makes it easier to discover books by combining an external books API with thoughtful search and saved lists. | API integration, caching, pagination, error handling, responsive UI. |
 | **Stockroom** | Tracks stock movements and warns a small shop before popular items run out. | Relational modeling, authentication, transactions, audit history, role-based access. |
@@ -23,3 +23,5 @@ The goal is to show range through a few complete, useful projects—not to start
 5. Pick a different primary learning goal for each project so the portfolio shows range without repeating the same CRUD app.
 
 For WeatherCast, the memorable feature is the traceable recommendation: users see the specific forecast values and time that affected the advice. The MVP uses deterministic logic; an “AI” label should only appear if a later feature uses a real model and explains what it adds.
+
+WeatherCast is publicly deployed at [weathercast.anderbel.com](https://weathercast.anderbel.com). Its API health check and interactive documentation are available at [api.weathercast.anderbel.com/health](https://api.weathercast.anderbel.com/health) and [api.weathercast.anderbel.com/docs](https://api.weathercast.anderbel.com/docs). Add current desktop and mobile screenshots before using the project as a portfolio case study.
