@@ -66,3 +66,23 @@ button:focus-visible, input:focus-visible { outline: 3px solid #7dcdb0; outline-
   .weather-page::after { animation: none; opacity: .48; }
   .weather-scene-art, .weather-sun-rays, .weather-rain { animation: none; }
 }
+
+/* Responsive surfaces and restrained interaction motion. */
+.weather-shell { width: 100%; }
+.display { font-feature-settings: 'ss01' on; }
+.weather-current, .weather-panel { transition: box-shadow 240ms ease, border-color 240ms ease, background-color 240ms ease; }
+.forecast-day { min-height: 11rem; transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease; }
+@media (hover: hover) {
+  .forecast-day:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgb(15 40 55 / 10%); }
+  .weather-page button:not(:disabled) { cursor: pointer; }
+}
+.weather-page button, .weather-page a { transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+.weather-page button:active { transform: scale(.98); }
+.weather-current::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(140deg, rgb(255 255 255 / 9%), transparent 46%); }
+@media (min-width: 1280px) {
+  .weather-hero { gap: clamp(3rem, 7vw, 8rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .weather-page button, .weather-page a, .weather-current, .weather-panel, .forecast-day { transition: none; }
+  .forecast-day:hover, .weather-page button:active { transform: none; }
+}

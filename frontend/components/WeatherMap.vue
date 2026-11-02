@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const config = useRuntimeConfig()
-const mapElement = ref<HTMLDivElement | null>(null)
+const mapElement = shallowRef<HTMLDivElement | null>(null)
 const activeLayer = ref<WeatherLayer>('temperature')
 const points = ref<WeatherMapPoint[]>([])
 const gridState = ref<GridState>('loading')
