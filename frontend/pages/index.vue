@@ -356,8 +356,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="weather-page min-h-screen bg-[#f4f7f3] px-4 py-6 text-[#16322e] dark:bg-[#0b1220] dark:text-slate-100" :data-theme="activeTheme">
-    <div class="relative z-10 mx-auto max-w-6xl">
+  <main class="weather-page min-h-screen bg-[#f4f7f3] px-4 py-6 sm:px-6 lg:px-10 text-[#16322e] dark:bg-[#0b1220] dark:text-slate-100" :data-theme="activeTheme">
+    <div class="weather-shell relative z-10 mx-auto max-w-[100rem]">
       <header class="flex flex-wrap items-center justify-between gap-4">
         <a href="#home" class="flex items-center gap-3 no-underline" :aria-label="copy.brandHome">
           <img src="/weathercast-icon.svg" alt="" aria-hidden="true" class="h-10 w-10 rounded-2xl shadow-sm" width="40" height="40">
@@ -380,10 +380,10 @@ onUnmounted(() => {
       </header>
       <p class="mt-3 text-right text-[11px] text-[#829389] dark:text-slate-400">{{ copy.locationPrivacy }}</p>
 
-      <section id="home" class="mt-12 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+      <section id="home" class="weather-hero mt-10 grid gap-8 lg:mt-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
         <div>
           <p class="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#638477] dark:text-sky-300">{{ copy.heroEyebrow }}</p>
-          <h1 class="display max-w-2xl text-4xl font-semibold leading-tight tracking-[-0.04em] text-[#163a33] dark:text-slate-100 sm:text-5xl">
+          <h1 class="display max-w-2xl text-4xl font-semibold leading-[1.08] tracking-[-0.045em] text-[#163a33] dark:text-slate-100 sm:text-5xl xl:text-6xl">
             {{ copy.heroTitle }}<br><span class="text-[#76a88e] dark:text-sky-300">{{ copy.heroTitleAccent }}</span>
           </h1>
           <p class="mt-4 max-w-xl text-base leading-7 text-[#62736c] dark:text-slate-300">{{ copy.heroDescription }}</p>
@@ -414,7 +414,7 @@ onUnmounted(() => {
       <p v-if="locationNotice" role="status" class="mt-4 text-sm text-[#55796b] dark:text-sky-300">{{ locationNotice }}</p>
 
       <section id="weather-overview" class="mt-10 grid scroll-mt-6 gap-5 lg:grid-cols-[0.9fr_1.1fr]" aria-live="polite">
-        <article class="relative overflow-hidden rounded-[2rem] p-7 text-white shadow-[0_22px_55px_rgba(23,62,55,0.15)] sm:p-9">
+        <article class="weather-current relative overflow-hidden rounded-[2rem] p-7 text-white shadow-[0_22px_55px_rgba(23,62,55,0.15)] sm:p-9">
           <WeatherScene :code="report?.current.weather_code ?? 2" />
           <div class="relative z-10">
             <div class="flex items-start justify-between gap-4">
@@ -436,7 +436,7 @@ onUnmounted(() => {
           </div>
         </article>
 
-        <article class="rounded-[2rem] border border-[#e1e9e2] bg-white p-7 shadow-[0_10px_36px_rgba(28,65,53,0.04)] dark:border-slate-700 dark:bg-slate-900 sm:p-9">
+        <article class="weather-panel rounded-[2rem] border border-[#e1e9e2] bg-white p-7 shadow-[0_10px_36px_rgba(28,65,53,0.04)] dark:border-slate-700 dark:bg-slate-900 sm:p-9">
           <div class="flex items-center justify-between gap-4">
             <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.recommendationEyebrow }}</p><h2 class="display mt-2 text-xl font-bold text-[#193f36] dark:text-slate-100">{{ copy.recommendationTitle }}</h2></div>
             <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#eef5ef] text-xl text-[#448267] dark:bg-slate-800 dark:text-sky-300">✳</span>
@@ -456,17 +456,17 @@ onUnmounted(() => {
         </article>
       </section>
 
-      <section class="mb-5 mt-5 rounded-[2rem] border border-[#e1e9e2] bg-white p-7 shadow-[0_10px_36px_rgba(28,65,53,0.04)] dark:border-slate-700 dark:bg-slate-900 sm:p-9">
+      <section class="weather-panel mb-5 mt-5 rounded-[2rem] border border-[#e1e9e2] bg-white p-7 shadow-[0_10px_36px_rgba(28,65,53,0.04)] dark:border-slate-700 dark:bg-slate-900 sm:p-9">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.outlookEyebrow }}</p><h2 class="display mt-2 text-xl font-bold text-[#193f36] dark:text-slate-100">{{ copy.sevenDayTitle }}</h2></div>
         </div>
         <div v-if="report?.daily.length" class="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7" role="group" :aria-label="copy.dailyForecastLabel">
-          <button v-for="(day, index) in report.daily" :key="day.date" type="button" class="rounded-2xl border p-3 text-left transition hover:-translate-y-0.5" :class="selectedDayDate === day.date ? 'border-[#4d9476] bg-[#edf6ef] shadow-sm dark:border-sky-400 dark:bg-slate-800' : 'border-[#e6ede7] bg-white dark:border-slate-700 dark:bg-slate-900'" :aria-pressed="selectedDayDate === day.date" @click="selectedDayDate = day.date">
+          <button v-for="(day, index) in report.daily" :key="day.date" type="button" class="forecast-day rounded-2xl border p-4 text-left" :class="selectedDayDate === day.date ? 'border-[#4d9476] bg-[#edf6ef] shadow-sm dark:border-sky-400 dark:bg-slate-800' : 'border-[#e6ede7] bg-white dark:border-slate-700 dark:bg-slate-900'" :aria-pressed="selectedDayDate === day.date" @click="selectedDayDate = day.date">
             <span class="block text-xs font-bold capitalize text-[#315b4d] dark:text-slate-100">{{ formatDay(day.date, index) }}</span>
-            <span class="mt-1 block text-[10px] text-[#82958b] dark:text-slate-400">{{ conditionLabel(day.weather_code) }}</span>
+            <span class="mt-1 block text-xs text-[#82958b] dark:text-slate-400">{{ conditionLabel(day.weather_code) }}</span>
             <span class="mt-3 block text-base font-semibold text-[#21483d] dark:text-sky-200" :aria-label="`${copy.high} ${Math.round(day.temperature_max_c)}°, ${copy.low} ${Math.round(day.temperature_min_c)}°`">{{ Math.round(day.temperature_max_c) }}° <span class="text-xs font-normal text-[#82958b] dark:text-slate-400">{{ Math.round(day.temperature_min_c) }}°</span></span>
-            <span class="mt-1 block text-[10px] text-[#74867c] dark:text-slate-300">{{ day.precipitation_probability_max_pct }}% {{ copy.rainChance }}</span>
-            <span class="mt-1 block text-[10px] text-[#74867c] dark:text-slate-300">{{ copy.rain }} {{ day.precipitation_sum_mm.toFixed(1) }} mm · {{ copy.wind }} {{ Math.round(day.wind_speed_max_kmh) }} km/h</span>
+            <span class="mt-1 block text-xs text-[#74867c] dark:text-slate-300">{{ day.precipitation_probability_max_pct }}% {{ copy.rainChance }}</span>
+            <span class="mt-1 block text-xs text-[#74867c] dark:text-slate-300">{{ copy.rain }} {{ day.precipitation_sum_mm.toFixed(1) }} mm · {{ copy.wind }} {{ Math.round(day.wind_speed_max_kmh) }} km/h</span>
           </button>
         </div>
         <div class="mt-8 flex flex-wrap items-end justify-between gap-4">
@@ -476,7 +476,7 @@ onUnmounted(() => {
         <HourlyForecastChart v-else-if="report" :hours="selectedDayHours" :timezone="report.timezone" :language="language" />
       </section>
 
-      <dialog ref="mapDialog" class="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto rounded-[2rem] border border-[#dce7df] bg-white p-0 text-[#16322e] shadow-2xl backdrop:bg-slate-950/70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @close="showMap = false">
+      <dialog ref="mapDialog" class="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-6xl overflow-y-auto rounded-[2rem] border border-[#dce7df] bg-white p-0 text-[#16322e] shadow-2xl backdrop:bg-slate-950/70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @close="showMap = false">
         <div class="p-5 sm:p-7">
           <div class="flex items-start justify-between gap-4">
             <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#789185] dark:text-sky-300">{{ copy.outlookEyebrow }}</p><h2 id="map-dialog-title" class="display mt-2 text-xl font-bold">{{ copy.mapTitle }}</h2><p class="mt-2 text-sm text-[#74867c] dark:text-slate-300">{{ copy.mapDescription }}</p></div>
