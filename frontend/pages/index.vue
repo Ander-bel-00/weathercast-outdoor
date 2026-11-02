@@ -34,7 +34,7 @@ const searching = ref(false)
 const locating = ref(false)
 const isCurrentLocation = ref(false)
 const error = ref('')
-const locationNoticeKey = ref<'locationDetected' | 'locationDenied' | 'locationUnavailable' | 'locationLookupFailed' | null>(null)
+const locationNoticeKey = ref<'locationDetected' | 'locationDenied' | 'locationUnavailable' | 'locationTimedOut' | 'locationLookupFailed' | null>(null)
 const locationNotice = computed(() => locationNoticeKey.value ? copy.value[locationNoticeKey.value] : '')
 const selectedDay = computed(() => report.value?.daily.find((day) => day.date === selectedDayDate.value)
   ?? report.value?.daily[0])
@@ -204,8 +204,12 @@ async function selectMapLocation(point: { latitude: number; longitude: number })
 function getBrowserPosition() {
   return new Promise<GeolocationPosition>((resolve, reject) => {
     const timeoutId = window.setTimeout(
-      () => reject(new Error('Location request exceeded the UI wait limit')),
-      7_500,
+      () => {
+        const timeoutError = new Error('Location request exceeded the UI wait limit')
+        timeoutError.name = 'LocationRequestTimeout'
+        reject(timeoutError)
+      },
+      6_500,
     )
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -218,8 +222,9 @@ function getBrowserPosition() {
       },
       {
         enableHighAccuracy: false,
-        maximumAge: 5 * 60 * 1000,
-        timeout: 7_000,
+        // Reuse a recent browser-known position when possible, without persisting coordinates ourselves.
+        maximumAge: 10 * 60 * 1000,
+        timeout: 6_000,
       },
     )
   })
@@ -271,8 +276,14 @@ async function locateUser() {
     }
   } catch (reason) {
     isCurrentLocation.value = false
-    const denied = typeof reason === 'object' && reason !== null && 'code' in reason && reason.code === 1
-    locationNoticeKey.value = denied ? 'locationDenied' : 'locationUnavailable'
+    const errorCode = typeof reason === 'object' && reason !== null && 'code' in reason ? reason.code : undefined
+    if (errorCode === 1) {
+      locationNoticeKey.value = 'locationDenied'
+    } else if (errorCode === 3 || (reason instanceof Error && reason.name === 'LocationRequestTimeout')) {
+      locationNoticeKey.value = 'locationTimedOut'
+    } else {
+      locationNoticeKey.value = 'locationUnavailable'
+    }
     const wasAlreadyShowingDefault = selected.value.latitude === DEFAULT_LOCATION.latitude
       && selected.value.longitude === DEFAULT_LOCATION.longitude
     selected.value = { ...DEFAULT_LOCATION }
